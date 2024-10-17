@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 
 const Excutor = ({ code }) => {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState([]);
 
   const handleEval = () => {
-    let outputLog = "";
+    let outputLog = [];
 
     const OriginalLog = console.log;
     console.log = (...args) => {
-      outputLog += args;
+      outputLog.push(args);
     };
 
     try {
@@ -25,7 +25,10 @@ const Excutor = ({ code }) => {
       <button onClick={handleEval} className="bg-yellow-800">
         run
       </button>
-      <div>{value}</div>
+      {value.map((val) => {
+        return <div key={Math.random()}>{val}</div>
+      }
+      )}
     </div>
   );
 };
