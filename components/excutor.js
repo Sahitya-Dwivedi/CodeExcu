@@ -12,7 +12,7 @@ const Excutor = ({ code }) => {
     const OriginalConsoleWarn = console.warn;
     const OriginalConsoleInfo = console.info;
     const OriginalConsoleDebug = console.debug;
-
+    const OriginalConsoleTable = console.table;
     // // during designing need to design these also
     // overwriting console
     console.log = (...args) => {
@@ -35,11 +35,68 @@ const Excutor = ({ code }) => {
       outputLog.push(`Debug: ${args}`);
     };
 
+    console.table = (...args) => {
+      let maxLength = 0;
+      let maxArr = [];
+
+      // check 2d array
+      function is2DArr(arr) {
+        return Array.isArray(arr[0]) && arr[0].some(Array.isArray);
+      }
+
+      // check and get longest array in 2d array
+      function CheckLength(arr) {
+        arr[0].forEach((subarr) => {
+          if (subarr.length > maxLength) {
+            maxLength = subarr.length;
+            maxArr = subarr;
+          }
+          return maxArr, maxLength;
+        });
+      }
+      const res = is2DArr(args);
+      CheckLength(args);
+      if (Array.isArray(args)) {
+        let table = (
+          <table className="w-full border-2 border-black">
+            <thead className="border-2 border-black">
+              <tr>
+                <th className="border-2 border-black">(Index)</th>
+                {res ? (
+                  maxArr.map((_, i) => {
+                    return (
+                      <th key={i} className="border-2 border-black">
+                        {i}
+                      </th>
+                    );
+                  })
+                ) : (
+                  <th className="border-2 border-black">Value</th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="border-2 border-black">
+              {!res
+                ? args[0].map((val, i) => {
+                    return (
+                      <tr key={i}>
+                        <td className="border-2 border-black">{i}</td>
+                        <td className="border-2 border-black">{val}</td>
+                      </tr>
+                    );
+                  })
+                : args[0].map((val, i) => {})}
+            </tbody>
+          </table>
+        );
+        outputLog.push(table);
+      }
+    };
     // evaluating code
     try {
       code ? eval(code) : eval(localStorage.getItem("code"));
     } catch (error) {
-      outputLog.push(`Error: ${error.message}`);
+      outputLog.push(`ErrorMsg: ${error.message}`);
     }
 
     // restoring console
