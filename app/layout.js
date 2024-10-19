@@ -13,7 +13,7 @@ const geistMono = localFont({
 });
 
 export const metadata = {
-  title: "RunKit",
+  title: "CodeExcu",
   description: "Here, you can write,edit,compile your code",
 };
 
