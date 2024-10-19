@@ -13,26 +13,27 @@ const Excutor = ({ code }) => {
     const OriginalConsoleInfo = console.info;
     const OriginalConsoleDebug = console.debug;
     const OriginalConsoleTable = console.table;
+
     // // during designing need to design these also
     // overwriting console
     console.log = (...args) => {
-      outputLog.push(args);
+      outputLog.push(args.join(" "));
     };
 
     console.error = (...args) => {
-      outputLog.push(`Error: ${args}`);
+      outputLog.push(`Error: ${args.join(" ")}`);
     };
 
     console.warn = (...args) => {
-      outputLog.push(`Warning: ${args}`);
+      outputLog.push(`Warning: ${args.join(" ")}`);
     };
 
     console.info = (...args) => {
-      outputLog.push(`Info: ${args}`);
+      outputLog.push(`Info: ${args.join(" ")}`);
     };
 
     console.debug = (...args) => {
-      outputLog.push(`Debug: ${args}`);
+      outputLog.push(`Debug: ${args.join(" ")}`);
     };
 
     console.table = (...args) => {
@@ -43,6 +44,10 @@ const Excutor = ({ code }) => {
       function is2DArr(arr) {
         return Array.isArray(arr[0]) && arr[0].some(Array.isArray);
       }
+      // check if their 2d array is entire 2d
+      function isEntire2DArray(arr) {
+        return arr.every((subarray) => Array.isArray(subarray));
+      }
 
       // check and get longest array in 2d array
       function CheckLength(arr) {
@@ -51,14 +56,34 @@ const Excutor = ({ code }) => {
             maxLength = subarr.length;
             maxArr = subarr;
           }
-          return maxArr, maxLength;
         });
       }
+
+      // create empty spaces in a array
+      function createEmptySpaces(arr) {
+        const spacesNo = maxLength - arr.length;
+        for (let i = 0; i < spacesNo; i++) {
+          arr.push("");
+        }
+      }
       const res = is2DArr(args);
+      let Ent2DArrRes = false;
+      if (res) {
+        Ent2DArrRes = isEntire2DArray(args[0]);
+      }
       CheckLength(args);
+      args[0].map((val) => createEmptySpaces(val));
+
+      // splitting arr if Ent2DArrRes is true
+      let SubArrArray;
+      let ArrArray;
+      if (!Ent2DArrRes) {
+        SubArrArray = args[0].filter((val) => Array.isArray(val));
+        ArrArray = args[0].filter((val) => !Array.isArray(val));
+      }
       if (Array.isArray(args)) {
         let table = (
-          <table className="w-full border-2 border-black">
+          <table className="w-1/2 border-2 border-black">
             <thead className="border-2 border-black">
               <tr>
                 <th className="border-2 border-black">(Index)</th>
@@ -73,6 +98,7 @@ const Excutor = ({ code }) => {
                 ) : (
                   <th className="border-2 border-black">Value</th>
                 )}
+                {!Ent2DArrRes && <th>Values</th>}
               </tr>
             </thead>
             <tbody className="border-2 border-black">
@@ -85,7 +111,31 @@ const Excutor = ({ code }) => {
                       </tr>
                     );
                   })
-                : args[0].map((val, i) => {})}
+                : args[0].map((val, i) => {
+                    return (
+                      <tr key={i}>
+                        <td className="border-2 border-black">{i}</td>
+                        {Ent2DArrRes &&
+                          val.map((Subval, j) => {
+                            return (
+                              <td key={j} className="border-2 border-black">
+                                {Subval}
+                              </td>
+                            );
+                          })}
+                        {!Ent2DArrRes &&
+                          SubArrArray.map((val, k) => {
+                           return val.map((subVal, b) => {
+                              return <td key={b}>{subVal}</td>;
+                            });
+                          })}
+                        {!Ent2DArrRes &&
+                          ArrArray.map((val, k) => {
+                            return <td key={k}>{val}</td>;
+                          })}
+                      </tr>
+                    );
+                  })}
             </tbody>
           </table>
         );
@@ -105,6 +155,7 @@ const Excutor = ({ code }) => {
     console.warn = OriginalConsoleWarn;
     console.info = OriginalConsoleInfo;
     console.debug = OriginalConsoleDebug;
+    console.table = OriginalConsoleTable;
 
     // setting value to output log
     setValue(outputLog);
