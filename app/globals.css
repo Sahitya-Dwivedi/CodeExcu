@@ -26,3 +26,12 @@ body {
     text-wrap: balance;
   }
 }
+
+.ConsoleTable td,
+.ConsoleTable th {
+  border-right: 2px solid #000;
+}
+
+.ConsoleTable tr{
+  border-bottom: 2px solid #000;
+}
