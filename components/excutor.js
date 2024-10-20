@@ -61,9 +61,26 @@ const Excutor = ({ code }) => {
 
       // create empty spaces in a array
       function createEmptySpaces(arr) {
-        const spacesNo = maxLength - arr.length;
-        for (let i = 0; i < spacesNo; i++) {
-          arr.push("");
+        let spacesNo;
+
+
+        if (Array.isArray(arr)) {
+          spacesNo = maxLength - arr.length;
+          for (let i = 0; i < spacesNo; i++) {
+            arr.push("");
+          }
+        } else {
+          spacesNo = maxLength - 1;
+          if (typeof arr === "number") {
+            for (let i = 0; i < spacesNo; i++) {
+              arr.toString().split("").unshift("");
+            }
+          }
+
+
+          for (let i = 0; i < spacesNo; i++) {
+            arr.split("").unshift("");
+          }
         }
       }
       const res = is2DArr(args);
@@ -71,71 +88,78 @@ const Excutor = ({ code }) => {
       if (res) {
         Ent2DArrRes = isEntire2DArray(args[0]);
       }
-      CheckLength(args);
-      args[0].map((val) => createEmptySpaces(val));
-
-      // splitting arr if Ent2DArrRes is true
-      let SubArrArray;
-      let ArrArray;
-      if (!Ent2DArrRes) {
-        SubArrArray = args[0].filter((val) => Array.isArray(val));
-        ArrArray = args[0].filter((val) => !Array.isArray(val));
+      if (res) {
+        CheckLength(args);
+        args[0].map((val) => createEmptySpaces(val));
       }
+      args[0].forEach((val) => { console.log("val:", val); });
+
       if (Array.isArray(args)) {
         let table = (
-          <table className="w-1/2 border-2 border-black">
-            <thead className="border-2 border-black">
+          <table className="ConsoleTable w-1/2 border-2 border-black">
+            <thead>
               <tr>
-                <th className="border-2 border-black">(Index)</th>
+                <th>(Index)</th>
                 {res ? (
                   maxArr.map((_, i) => {
-                    return (
-                      <th key={i} className="border-2 border-black">
-                        {i}
-                      </th>
-                    );
+                    return <th key={i}>{i}</th>;
                   })
                 ) : (
-                  <th className="border-2 border-black">Value</th>
+                  <th>Values</th>
                 )}
-                {!Ent2DArrRes && <th>Values</th>}
+                {!Ent2DArrRes && res && <th>Values</th>}
               </tr>
             </thead>
-            <tbody className="border-2 border-black">
+            <tbody>
               {!res
                 ? args[0].map((val, i) => {
                     return (
                       <tr key={i}>
-                        <td className="border-2 border-black">{i}</td>
-                        <td className="border-2 border-black">{val}</td>
+                        <td>{i}</td>
+                        <td>{val}</td>
                       </tr>
                     );
                   })
                 : args[0].map((val, i) => {
                     return (
                       <tr key={i}>
-                        <td className="border-2 border-black">{i}</td>
-                        {Ent2DArrRes &&
+                        <td>{i}</td>
+                        {Array.isArray(val) ? (
                           val.map((Subval, j) => {
-                            return (
-                              <td key={j} className="border-2 border-black">
-                                {Subval}
-                              </td>
-                            );
-                          })}
-                        {!Ent2DArrRes &&
-                          SubArrArray.map((val, k) => {
-                           return val.map((subVal, b) => {
-                              return <td key={b}>{subVal}</td>;
-                            });
-                          })}
-                        {!Ent2DArrRes &&
-                          ArrArray.map((val, k) => {
-                            return <td key={k}>{val}</td>;
-                          })}
+                            return <td key={j}>{Subval}</td>;
+                          })
+                        ) : (
+                          <td>{val}</td>
+                        )}
                       </tr>
                     );
                   })}
+              {/* {!Ent2DArrRes &&
+                SubArrArray.map((val, k) => {
+                  return (
+                    <tr key={k}>
+                      <td >{k}</td>
+                      {val.map((subVal, b) => {
+                        return (
+                          <td key={b} >
+                            {subVal}
+                          </td>
+                        );
+                      })}
+                      ;
+                    </tr>
+                  );
+                })} */}
+
+              {/* {!Ent2DArrRes &&
+                ArrArray.map((val, k) => {
+                  return (
+                    <tr key={k}>
+                      <td >{k}</td>
+                      <td >{val}</td>
+                    </tr>
+                  );
+                })} */}
             </tbody>
           </table>
         );
