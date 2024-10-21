@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 const Excutor = ({ code }) => {
   const [value, setValue] = useState([]);
@@ -14,7 +15,6 @@ const Excutor = ({ code }) => {
     const OriginalConsoleDebug = console.debug;
     const OriginalConsoleTable = console.table;
 
-    // // during designing need to design these also
     // overwriting console
     console.log = (...args) => {
       outputLog.push(args.join(" "));
@@ -61,26 +61,16 @@ const Excutor = ({ code }) => {
 
       // create empty spaces in a array
       function createEmptySpaces(arr) {
-        let spacesNo;
-
-
+        let spacesNo = maxLength - arr.length;
         if (Array.isArray(arr)) {
-          spacesNo = maxLength - arr.length;
-          for (let i = 0; i < spacesNo; i++) {
-            arr.push("");
-          }
-        } else {
-          spacesNo = maxLength - 1;
-          if (typeof arr === "number") {
-            for (let i = 0; i < spacesNo; i++) {
-              arr.toString().split("").unshift("");
+          arr.forEach((val) => {
+            if (!val) {
+              throw new SyntaxError("Array should not have empty values(,,)");
             }
-          }
-
-
-          for (let i = 0; i < spacesNo; i++) {
-            arr.split("").unshift("");
-          }
+          });
+        }
+        for (let i = 0; i < spacesNo; i++) {
+          arr.push("");
         }
       }
       const res = is2DArr(args);
@@ -92,7 +82,6 @@ const Excutor = ({ code }) => {
         CheckLength(args);
         args[0].map((val) => createEmptySpaces(val));
       }
-      args[0].forEach((val) => { console.log("val:", val); });
 
       if (Array.isArray(args)) {
         let table = (
@@ -102,64 +91,47 @@ const Excutor = ({ code }) => {
                 <th>(Index)</th>
                 {res ? (
                   maxArr.map((_, i) => {
-                    return <th key={i}>{i}</th>;
+                    return <th key={uuidv4()}>{i}</th>;
                   })
                 ) : (
-                  <th>Values</th>
+                  <th key={uuidv4()}>Values</th>
                 )}
-                {!Ent2DArrRes && res && <th>Values</th>}
+                {!Ent2DArrRes && res && <th key={uuidv4()}>Values</th>}
               </tr>
             </thead>
             <tbody>
               {!res
                 ? args[0].map((val, i) => {
                     return (
-                      <tr key={i}>
-                        <td>{i}</td>
-                        <td>{val}</td>
+                      <tr key={uuidv4()}>
+                        <td key={uuidv4()}>{i}</td>
+                        <td key={uuidv4()}>{val}</td>
                       </tr>
                     );
                   })
                 : args[0].map((val, i) => {
                     return (
-                      <tr key={i}>
-                        <td>{i}</td>
-                        {Array.isArray(val) ? (
-                          val.map((Subval, j) => {
-                            return <td key={j}>{Subval}</td>;
-                          })
-                        ) : (
-                          <td>{val}</td>
-                        )}
+                      <tr key={uuidv4()}>
+                        <td key={uuidv4()}>{i}</td>
+                        {Array.isArray(val)
+                          ? val.map((Subval, j) => {
+                              return <td key={uuidv4()}>{Subval}</td>;
+                            })
+                          : maxArr.map((_, j) => {
+                              if (j === maxArr.length - 1) {
+                                return (
+                                  <React.Fragment key={uuidv4()}>
+                                    <td key={uuidv4()}></td>
+                                    <td key={uuidv4()}>{val}</td>
+                                  </React.Fragment>
+                                );
+                              } else {
+                                return <td key={uuidv4()}>{""}</td>;
+                              }
+                            })}
                       </tr>
                     );
                   })}
-              {/* {!Ent2DArrRes &&
-                SubArrArray.map((val, k) => {
-                  return (
-                    <tr key={k}>
-                      <td >{k}</td>
-                      {val.map((subVal, b) => {
-                        return (
-                          <td key={b} >
-                            {subVal}
-                          </td>
-                        );
-                      })}
-                      ;
-                    </tr>
-                  );
-                })} */}
-
-              {/* {!Ent2DArrRes &&
-                ArrArray.map((val, k) => {
-                  return (
-                    <tr key={k}>
-                      <td >{k}</td>
-                      <td >{val}</td>
-                    </tr>
-                  );
-                })} */}
             </tbody>
           </table>
         );
@@ -190,7 +162,7 @@ const Excutor = ({ code }) => {
         run
       </button>
       {value.map((val) => {
-        return <div key={Math.random()}>{val}</div>;
+        return <div key={uuidv4()}>{val}</div>;
       })}
     </div>
   );
