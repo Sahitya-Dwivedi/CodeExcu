@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-const Excutor = ({ code }) => {
+const Excutor = ({ code, toRun, ChangeRun }) => {
   const [value, setValue] = useState([]);
 
-  const handleEval = () => {
+  const handleEval = useCallback(() => {
     let outputLog = [];
 
     // Save original console methods
@@ -19,7 +19,15 @@ const Excutor = ({ code }) => {
 
     // Overwrite console methods
     const overwriteConsole = () => {
-      console.log = (...args) => outputLog.push(args.join(" "));
+      console.log = (...args) => {
+        if (Array.isArray(args[0])) {
+          outputLog.push(`[${args.join(" ")}]`);
+        } else if (typeof args[0] === "object") {
+          outputLog.push(JSON.stringify(args[0]));
+        } else {
+          outputLog.push(args.join(" "));
+        }
+      };
       console.error = (...args) => outputLog.push(`Error: ${args.join(" ")}`);
       console.warn = (...args) => outputLog.push(`Warning: ${args.join(" ")}`);
       console.info = (...args) => outputLog.push(`Info: ${args.join(" ")}`);
@@ -30,9 +38,9 @@ const Excutor = ({ code }) => {
     // Restore original console methods
     const restoreConsole = () => {
       console.log = originalConsole.log;
-      console.error = originalConsole.error;
       console.warn = originalConsole.warn;
       console.info = originalConsole.info;
+      console.error = originalConsole.error;
       console.debug = originalConsole.debug;
       console.table = originalConsole.table;
     };
@@ -42,8 +50,11 @@ const Excutor = ({ code }) => {
       let maxLength = 0;
       let maxArr = [];
 
-      const is2DArr = (arr) => Array.isArray(arr[0]) && arr[0].some(Array.isArray);
-      const isEntire2DArray = (arr) => arr.every((subarray) => Array.isArray(subarray));
+      const is2DArr = (arr) =>
+        Array.isArray(arr[0]) && arr[0].some(Array.isArray);
+      const isEntire2DArray = (arr) =>
+        arr.every((subarray) => Array.isArray(subarray));
+
       const checkLength = (arr) => {
         arr[0].forEach((subarr) => {
           if (subarr.length > maxLength) {
@@ -57,12 +68,14 @@ const Excutor = ({ code }) => {
         if (Array.isArray(arr)) {
           arr.forEach((val) => {
             if (!val) {
-              throw new SyntaxError("Array should not have empty values(,,)");
+              throw new SyntaxError("Array should not have empty values");
             }
           });
         }
-        for (let i = 0; i < spacesNo; i++) {
-          arr.push("");
+        if (Array.isArray(arr)) {
+          for (let i = 0; i < spacesNo; i++) {
+            arr.push("");
+          }
         }
       };
 
@@ -102,8 +115,8 @@ const Excutor = ({ code }) => {
                     <tr key={uuidv4()}>
                       <td key={uuidv4()}>{i}</td>
                       {Array.isArray(val)
-                        ? val.map((subval, j) => <td key={uuidv4()}>{subval}</td>)
-                        : maxArr.map((_, j) => (
+                        ? val.map((subval) => <td key={uuidv4()}>{subval}</td>)
+                        : maxArr.map((_, j) =>
                             j === maxArr.length - 1 ? (
                               <React.Fragment key={uuidv4()}>
                                 <td key={uuidv4()}></td>
@@ -112,7 +125,7 @@ const Excutor = ({ code }) => {
                             ) : (
                               <td key={uuidv4()}>{""}</td>
                             )
-                          ))}
+                          )}
                     </tr>
                   ))}
             </tbody>
@@ -127,6 +140,8 @@ const Excutor = ({ code }) => {
       try {
         code ? eval(code) : eval(localStorage.getItem("code"));
       } catch (error) {
+        console.error(error);
+        originalConsole.error(error);
         outputLog.push(`ErrorMsg: ${error.message}`);
       }
     };
@@ -138,13 +153,16 @@ const Excutor = ({ code }) => {
 
     // Set output log
     setValue(outputLog);
-  };
-
+  }, [code]);
+  
+  useEffect(() => {
+    if (toRun) {
+      handleEval();
+      ChangeRun(false);
+    }
+  }, [ChangeRun, handleEval, toRun]);
   return (
     <div className="bg-red-900 h-screen w-[50vw]">
-      <button onClick={handleEval} className="bg-yellow-800">
-        run
-      </button>
       {value.map((val) => (
         <div key={uuidv4()}>{val}</div>
       ))}
