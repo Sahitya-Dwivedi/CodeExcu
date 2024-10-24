@@ -9,9 +9,9 @@ const Home = () => {
   const [run, setRun] = useState(false);
 
   return (
-    <div className="overflow-hidden flex flex-col scroll-smooth">
+    <div className="flex flex-col justify-end items-end">
       <Navbar letRun={setRun} />
-      <div className="flex justify-between items-center">
+      <div className="flex justify-end items-end" >
         <CodeEditor data={setCode} />
         <Excutor code={code} toRun={run} ChangeRun={setRun} />
       </div>

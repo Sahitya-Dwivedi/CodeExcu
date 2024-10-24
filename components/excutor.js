@@ -162,7 +162,7 @@ const Excutor = ({ code, toRun, ChangeRun }) => {
     }
   }, [ChangeRun, handleEval, toRun]);
   return (
-    <div className="bg-red-900 h-screen w-[50vw]">
+    <div className="bg-red-900 h-[90vh] w-[50vw] overflow-auto scroll-smooth">
       {value.map((val) => (
         <div key={uuidv4()}>{val}</div>
       ))}

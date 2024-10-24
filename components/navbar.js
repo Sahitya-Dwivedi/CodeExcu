@@ -2,9 +2,9 @@ import React from "react";
 
 const Navbar = ({ letRun }) => {
   return (
-    <header className="w-screen h-[52px] bg-blue-900 ">
+    <nav className="w-screen h-[10vh] bg-blue-800">
       <button onClick={() => letRun(true)}>run</button>
-    </header>
+    </nav>
   );
 };
 
