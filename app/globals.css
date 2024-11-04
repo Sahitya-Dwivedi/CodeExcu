@@ -30,6 +30,9 @@ body {
 td,
 th {
   border-right: 2px solid #000;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 tr {
@@ -37,9 +40,9 @@ tr {
 }
 
 table {
+  table-layout: fixed;
   border-collapse: collapse;
-  min-width: 50%;
-  max-width: fit-content;
+  width: 90%;
   margin: 10px;
   border: 2px solid #000;
 }
