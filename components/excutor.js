@@ -63,7 +63,6 @@ const Excutor = ({ code, toRun, ChangeRun }) => {
         }
       });
       setValue(outputLog);
-      console.log(e.data);
     };
   }, [code]);
 

@@ -13,19 +13,46 @@ self.onmessage = (e) => {
 
   // Overwrite console methods
   const overwriteConsole = () => {
-    // console.log = (...args) => {
-    //   if (Array.isArray(args[0])) {
-    //     outputLog.push(`[${args.join(" ")}]`);
-    //   } else if (typeof args[0] === "object") {
-    //     outputLog.push(JSON.stringify(args[0]));
-    //   } else {
-    //     outputLog.push(args.join(" "));
-    //   }
-    // };
-    console.error = (...args) => outputLog.push(`Error: ${args.join(" ")}`);
-    console.warn = (...args) => outputLog.push(`Warning: ${args.join(" ")}`);
-    console.info = (...args) => outputLog.push(`Info: ${args.join(" ")}`);
-    console.debug = (...args) => outputLog.push(`Debug: ${args.join(" ")}`);
+    console.log = (...args) => {
+      originalConsole.log(args);
+      if (typeof args[0] === "object") {
+        return outputLog.push(JSON.stringify(args[0]));
+      } else {
+        return outputLog.push(args.join(" "));
+      }
+    };
+    console.error = (...args) => {
+      originalConsole.error(args);
+      if (typeof args[0] === "object") {
+        return outputLog.push(`Error: ${JSON.stringify(args[0])}`);
+      } else {
+        return outputLog.push(`Error: ${args.join(" ")}`);
+      }
+    };
+    console.warn = (...args) => {
+      originalConsole.warn(args);
+      if (typeof args[0] === "object") {
+        return outputLog.push(`Warning: ${JSON.stringify(args[0])}`);
+      } else {
+        return outputLog.push(`Warning: ${args.join(" ")}`);
+      }
+    };
+    console.info = (...args) => {
+      originalConsole.info(args);
+      if (typeof args[0] === "object") {
+        return outputLog.push(`Info: ${JSON.stringify(args[0])}`);
+      } else {
+        return outputLog.push(`Info: ${args.join(" ")}`);
+      }
+    };
+    console.debug = (...args) => {
+      originalConsole.debug(args);
+      if (typeof args[0] === "object") {
+        return outputLog.push(`Debug: ${JSON.stringify(args[0])}`);
+      } else {
+        return outputLog.push(`Debug: ${args.join(" ")}`);
+      }
+    };
     console.table = (...args) => handleTable(args);
   };
 
@@ -70,7 +97,7 @@ self.onmessage = (e) => {
           for (let i = 0; i < spacesNo; i++) {
             val.push("");
           }
-          
+
           return val;
         } else {
           let spacesNo = maxLength;
@@ -81,8 +108,6 @@ self.onmessage = (e) => {
           return [...genSpaces, val];
         }
       });
-
-      console.log(NewArr);
     }
     headers = () => {
       if (ent2DArrRes) {
@@ -94,7 +119,6 @@ self.onmessage = (e) => {
         return ["Values"];
       }
     };
-    console.log(NewArr);
     if (Array.isArray(args[0])) {
       const tableData = {
         headers: headers(),
@@ -104,7 +128,6 @@ self.onmessage = (e) => {
               if (Array.isArray(val)) {
                 return [i, ...val];
               } else {
-                console.log(maxArr);
                 return maxArr.map((_, j) => {
                   if (j === maxArr.length - 1) {
                     return val;
