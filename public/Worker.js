@@ -14,7 +14,6 @@ self.onmessage = (e) => {
   // Overwrite console methods
   const overwriteConsole = () => {
     console.log = (...args) => {
-      originalConsole.log(args);
       if (typeof args[0] === "object") {
         return outputLog.push(JSON.stringify(args[0]));
       } else {
