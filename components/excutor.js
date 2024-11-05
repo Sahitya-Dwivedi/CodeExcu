@@ -75,7 +75,7 @@ const Excutor = ({ code, toRun, ChangeRun }) => {
   return (
     <div className="bg-red-900 h-[90vh] w-[50vw] overflow-auto scroll-smooth">
       {value.map((val) => (
-        <div key={uuidv4()}>{val}</div>
+        <div key={uuidv4()} className="whitespace-pre py-1 my-1 tracking-widest">{val}</div>
       ))}
     </div>
   );
