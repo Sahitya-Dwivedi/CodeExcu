@@ -17,38 +17,17 @@ const Excutor = ({ code, toRun, ChangeRun }) => {
               <thead>
                 <tr>
                   <th>(Index)</th>
-                  {val.headers.map((val, i) => {
+                  {val.headers.map((val) => {
                     return <th key={uuidv4()}>{val}</th>;
                   })}
                 </tr>
               </thead>
               <tbody>
-                {val.rows.map((val, i) => {
+                {val.rows.map((val) => {
                   return (
                     <tr key={uuidv4()}>
                       {Array.isArray(val) &&
                         val.map((subval) => {
-                          const checkSub = val.findIndex((val) => val === null);
-                          // if (checkSub === -1) {
-                          //   return <td key={uuidv4()}>{subval}</td>;
-                          // } else {
-                          //   if (i== checkSub ) {
-                          //     console.log("null found",checkSub);
-                          //     return (
-                          //       <>
-                          //         <td key={uuidv4()}></td>
-                          //         <td key={uuidv4()}></td>
-                          //         <td key={uuidv4()}>{subval}</td>
-                          //       </>
-                          //     );
-                          //   } else {
-                          //     return (
-                          //       <>
-                          //         <td key={uuidv4()}>{subval}</td>
-                          //       </>
-                          //     );
-                          //   }
-                          // }
                           return <td key={uuidv4()}>{subval}</td>;
                         })}
                     </tr>
@@ -64,7 +43,7 @@ const Excutor = ({ code, toRun, ChangeRun }) => {
       });
       setValue(outputLog);
     };
-  }, [code]);
+  }, []);
 
   useEffect(() => {
     if (toRun) {

@@ -71,11 +71,15 @@ self.onmessage = (e) => {
     let maxLength = 0;
     let maxArr = [];
 
+    // function that check if array is 2D
     const is2DArr = (arr) =>
       Array.isArray(arr[0]) && arr[0].some(Array.isArray);
+
+    // function that check if array is entirely 2D
     const isEntire2DArray = (arr) =>
       arr.every((subarray) => Array.isArray(subarray));
 
+    // Check length of subarrays and find max length
     const checkLength = (arr) => {
       arr[0].forEach((subarr) => {
         if (subarr.length > maxLength) {
@@ -85,12 +89,17 @@ self.onmessage = (e) => {
       });
     };
 
+    // checking if array is 2D
     const res = is2DArr(args);
+    // checking if array is entirely 2D
     let ent2DArrRes = false;
+
     let NewArr = [];
+
     if (res) {
       ent2DArrRes = isEntire2DArray(args[0]);
       checkLength(args);
+      // adding empty strings to subarrays
       NewArr = args[0].map((val) => {
         if (Array.isArray(val)) {
           let spacesNo = maxLength - val.length;
@@ -109,6 +118,8 @@ self.onmessage = (e) => {
         }
       });
     }
+
+    // function that returns headers
     headers = () => {
       if (ent2DArrRes) {
         return maxArr.map((_, i) => i);
@@ -119,6 +130,7 @@ self.onmessage = (e) => {
         return ["Values"];
       }
     };
+
     if (Array.isArray(args[0])) {
       const tableData = {
         headers: headers(),
@@ -142,47 +154,7 @@ self.onmessage = (e) => {
               }
             }),
       };
-      //   const table = (
-      //     <table className="ConsoleTable w-1/2 border-2 border-black">
-      //       <thead>
-      //         <tr>
-      //           <th>(Index)</th>
-      //           {res ? (
-      //             maxArr.map((_, i) => <th key={uuidv4()}>{i}</th>)
-      //           ) : (
-      //             <th key={uuidv4()}>Values</th>
-      //           )}
-      //           {!ent2DArrRes && res && <th key={uuidv4()}>Values</th>}
-      //         </tr>
-      //       </thead>
-      //       <tbody>
-      //         {!res
-      //           ? args[0].map((val, i) => (
-      //               <tr key={uuidv4()}>
-      //                 <td key={uuidv4()}>{i}</td>
-      //                 <td key={uuidv4()}>{val}</td>
-      //               </tr>
-      //             ))
-      //           : args[0].map((val, i) => (
-      //               <tr key={uuidv4()}>
-      //                 <td key={uuidv4()}>{i}</td>
-      //                 {Array.isArray(val)
-      //                   ? val.map((subval) => <td key={uuidv4()}>{subval}</td>)
-      //                   : maxArr.map((_, j) =>
-      //                       j === maxArr.length - 1 ? (
-      //                         <div key={uuidv4()}>
-      //                           <td key={uuidv4()}></td>
-      //                           <td key={uuidv4()}>{val}</td>
-      //                         </div>
-      //                       ) : (
-      //                         <td key={uuidv4()}>{""}</td>
-      //                       )
-      //                     )}
-      //               </tr>
-      //             ))}
-      //       </tbody>
-      //     </table>
-      //   );
+
       outputLog.push(tableData);
     }
   };
@@ -192,9 +164,7 @@ self.onmessage = (e) => {
     try {
       e.data ? eval(e.data) : eval(localStorage.getItem("code"));
     } catch (error) {
-      console.error(error);
-      originalConsole.error(error);
-      outputLog.push(`ErrorMsg: ${error.message}`);
+      outputLog.push(`Error: ${error.message}`);
     }
   };
 
@@ -204,6 +174,5 @@ self.onmessage = (e) => {
   restoreConsole();
 
   // Set output log
-  //   setValue(outputLog);
   self.postMessage(outputLog);
 };
