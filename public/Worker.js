@@ -105,7 +105,6 @@ self.onmessage = (e) => {
           for (let i = 0; i < spacesNo; i++) {
             val.push("");
           }
-
           return val;
         } else {
           let spacesNo = maxLength;
@@ -117,7 +116,6 @@ self.onmessage = (e) => {
         }
       });
     }
-
     // function that returns headers
     headers = () => {
       if (ent2DArrRes) {
@@ -137,23 +135,10 @@ self.onmessage = (e) => {
           ? args[0].map((val, i) => [i, val])
           : NewArr.map((val, i) => {
               if (Array.isArray(val)) {
-                return [i, ...val];
-              } else {
-                return maxArr.map((_, j) => {
-                  if (j === maxArr.length - 1) {
-                    return val;
-                  } else {
-                    if (j === 0) {
-                      return i;
-                    } else {
-                      return null;
-                    }
-                  }
-                });
+                return [i, ...val.map((subval) => (Array.isArray(subval) ? JSON.stringify([...subval]): subval))];
               }
             }),
       };
-
       outputLog.push(tableData);
     }
   };
@@ -174,4 +159,5 @@ self.onmessage = (e) => {
 
   // Set output log
   self.postMessage(outputLog);
+  console.log(outputLog);
 };
