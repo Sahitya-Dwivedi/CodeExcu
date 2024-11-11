@@ -80,6 +80,14 @@ self.onmessage = (e) => {
 
     // Check length of subarrays and find max length
     const checkLength = (arr) => {
+      arr[0] = arr[0].map((subarr) => {
+        if (subarr === null) {
+          return ["null"];
+        } else if (subarr === undefined) {
+          return ["undefined"];
+        }
+        return subarr;
+      });
       arr[0].forEach((subarr) => {
         if (subarr.length > maxLength) {
           maxLength = subarr.length;
@@ -135,11 +143,18 @@ self.onmessage = (e) => {
           ? args[0].map((val, i) => [i, val])
           : NewArr.map((val, i) => {
               if (Array.isArray(val)) {
-                return [i, ...val.map((subval) => (Array.isArray(subval) ? JSON.stringify([...subval]): subval))];
+                return [
+                  i,
+                  ...val.map((subval) =>
+                    Array.isArray(subval) ? JSON.stringify([...subval]) : subval
+                  ),
+                ];
               }
             }),
       };
       outputLog.push(tableData);
+    } else if (typeof args[0] === "object") {
+      outputLog.push("JSON.stringify(args[0])");
     }
   };
 
@@ -148,6 +163,7 @@ self.onmessage = (e) => {
     try {
       e.data ? eval(e.data) : eval(localStorage.getItem("code"));
     } catch (error) {
+      originalConsole.error(error);
       outputLog.push(`Error: ${error.message}`);
     }
   };
