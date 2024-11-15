@@ -92,6 +92,7 @@ self.onmessage = (e) => {
         if (subarr.length > maxLength) {
           maxLength = subarr.length;
           maxArr = subarr;
+          if (typeof subarr === "string") maxLength = 1;
         }
       });
     };
@@ -164,7 +165,7 @@ self.onmessage = (e) => {
       e.data ? eval(e.data) : eval(localStorage.getItem("code"));
     } catch (error) {
       originalConsole.error(error);
-      outputLog.push(`Error: ${error.message}`);
+      outputLog.push(`Error: ${error}`);
     }
   };
 
@@ -175,5 +176,4 @@ self.onmessage = (e) => {
 
   // Set output log
   self.postMessage(outputLog);
-  console.log(outputLog);
 };
