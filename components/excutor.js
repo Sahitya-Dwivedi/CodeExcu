@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { FaTrash } from "react-icons/fa";
 
-const Excutor = ({ code, toRun, ChangeRun }) => {
+const Excutor = ({ toRun, ChangeRun }) => {
   const [value, setValue] = useState([]);
 
   const handleEval = useCallback(() => {
@@ -55,7 +55,7 @@ const Excutor = ({ code, toRun, ChangeRun }) => {
   return (
     <div className="h-[90vh] w-[50vw] overflow-auto scroll-smooth">
       <button
-        onClick={() => console.log("You Clicked This Button")}
+        onClick={() => setValue([])}
         className="clear_terminal text-blue-400 text-xl border-2 border-blue-400 rounded-md p-1 m-2 right-0 absolute"
       >
         <FaTrash />
