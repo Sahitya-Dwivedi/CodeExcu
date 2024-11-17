@@ -14,11 +14,12 @@ self.onmessage = (e) => {
   // Overwrite console methods
   const overwriteConsole = () => {
     console.log = (...args) => {
-      if (typeof args[0] === "object") {
-        return outputLog.push(JSON.stringify(args[0]));
-      } else {
-        return outputLog.push(args.join(" "));
-      }
+      if (typeof args[0] === "object")
+        outputLog.push(
+          args.map((subargs) => JSON.stringify(subargs)).join(" ")
+        );
+      else if(typeof args[0] === "undefined") outputLog.push(JSON.stringify(args[0]).join(" "));  
+      else outputLog.push(args.join(" "));
     };
     console.error = (...args) => {
       originalConsole.error(args);
@@ -164,8 +165,8 @@ self.onmessage = (e) => {
     try {
       e.data ? eval(e.data) : eval(localStorage.getItem("code"));
     } catch (error) {
-      originalConsole.error(error);
-      outputLog.push(`Error: ${error}`);
+      // originalConsole.error(error);
+      outputLog.push(`${error}`);
     }
   };
 
