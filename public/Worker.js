@@ -14,44 +14,59 @@ self.onmessage = (e) => {
   // Overwrite console methods
   const overwriteConsole = () => {
     console.log = (...args) => {
-      if (typeof args[0] === "object")
-        outputLog.push(
-          args.map((subargs) => JSON.stringify(subargs)).join(" ")
-        );
-      else if(typeof args[0] === "undefined") outputLog.push(JSON.stringify(args[0]).join(" "));  
-      else outputLog.push(args.join(" "));
+      let NewArgs = args
+        .map((subargs) => {
+          if (typeof subargs === "object") return JSON.stringify(subargs);
+          else if (typeof subargs === "undefined") return "undefined";
+          else if (typeof subargs === "symbol") return subargs.toString();
+          else return subargs;
+        })
+        .join(" ");
+      return outputLog.push(NewArgs);
     };
     console.error = (...args) => {
-      originalConsole.error(args);
-      if (typeof args[0] === "object") {
-        return outputLog.push(`Error: ${JSON.stringify(args[0])}`);
-      } else {
-        return outputLog.push(`Error: ${args.join(" ")}`);
-      }
+      let NewArgs = args
+        .map((subargs) => {
+          if (typeof subargs === "object") return JSON.stringify(subargs);
+          else if (typeof subargs === "undefined") return "undefined";
+          else if (typeof subargs === "symbol") return subargs.toString();
+          else return subargs;
+        })
+        .join(" ");
+      return outputLog.push(`Error: ${NewArgs}`);
     };
     console.warn = (...args) => {
-      originalConsole.warn(args);
-      if (typeof args[0] === "object") {
-        return outputLog.push(`Warning: ${JSON.stringify(args[0])}`);
-      } else {
-        return outputLog.push(`Warning: ${args.join(" ")}`);
-      }
+      let NewArgs = args
+        .map((subargs) => {
+          if (typeof subargs === "object") return JSON.stringify(subargs);
+          else if (typeof subargs === "undefined") return "undefined";
+          else if (typeof subargs === "symbol") return subargs.toString();
+          else return subargs;
+        })
+        .join(" ");
+      return outputLog.push(`Warning: ${NewArgs}`);
     };
     console.info = (...args) => {
-      originalConsole.info(args);
-      if (typeof args[0] === "object") {
-        return outputLog.push(`Info: ${JSON.stringify(args[0])}`);
-      } else {
-        return outputLog.push(`Info: ${args.join(" ")}`);
-      }
+      let NewArgs = args
+        .map((subargs) => {
+          if (typeof subargs === "object") return JSON.stringify(subargs);
+          else if (typeof subargs === "undefined") return "undefined";
+          else if (typeof subargs === "symbol") return subargs.toString();
+          else return subargs;
+        })
+        .join(" ");
+      return outputLog.push(`Info: ${NewArgs}`);
     };
     console.debug = (...args) => {
-      originalConsole.debug(args);
-      if (typeof args[0] === "object") {
-        return outputLog.push(`Debug: ${JSON.stringify(args[0])}`);
-      } else {
-        return outputLog.push(`Debug: ${args.join(" ")}`);
-      }
+      let NewArgs = args
+        .map((subargs) => {
+          if (typeof subargs === "object") return JSON.stringify(subargs);
+          else if (typeof subargs === "undefined") return "undefined";
+          else if (typeof subargs === "symbol") return subargs.toString();
+          else return subargs;
+        })
+        .join(" ");
+      return outputLog.push(`Debug: ${NewArgs}`);
     };
     console.table = (...args) => handleTable(args);
   };
