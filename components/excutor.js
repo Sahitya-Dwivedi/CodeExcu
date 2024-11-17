@@ -53,21 +53,23 @@ const Excutor = ({ toRun, ChangeRun }) => {
     }
   }, [ChangeRun, handleEval, toRun]);
   return (
-    <div className="h-[90vh] w-[50vw] overflow-auto scroll-smooth">
+    <div className="terminal h-[90vh] w-[50vw] overflow-auto">
       <button
         onClick={() => setValue([])}
         className="clear_terminal text-blue-400 text-xl border-2 border-blue-400 rounded-md p-1 m-2 right-0 absolute"
       >
         <FaTrash />
       </button>
-      {value.map((val) => (
-        <div
-          key={uuidv4()}
-          className="whitespace-pre py-1 my-1 tracking-widest"
-        >
-          {val}
-        </div>
-      ))}
+      <div className="terminalData mx-4 ">
+        {value.map((val) => (
+          <div
+            key={uuidv4()}
+            className="whitespace-pre py-1 my-1 tracking-widest"
+          >
+            {val}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
