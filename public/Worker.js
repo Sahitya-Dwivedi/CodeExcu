@@ -16,8 +16,21 @@ self.onmessage = (e) => {
     console.log = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") return JSON.stringify(subargs);
-          else if (typeof subargs === "undefined") return "undefined";
+          if (typeof subargs === "object") {
+            function replacer(arr) {
+              arr.forEach((val, i) => {
+                if (typeof val === "undefined") {
+                  arr[i] = "undefined";
+                } else if (Array.isArray(val)) {
+                  replacer(val);
+                }
+              });
+            }
+            if (Array.isArray(subargs)) {
+              replacer(subargs);
+            }
+            return JSON.stringify(subargs);
+          } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
