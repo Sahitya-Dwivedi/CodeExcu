@@ -184,7 +184,11 @@ self.onmessage = (e) => {
       };
       outputLog.push(tableData);
     } else if (typeof args[0] === "object") {
-      outputLog.push("JSON.stringify(args[0])");
+      const tableData = {
+        headers: headers(),
+        rows: Object.entries(args[0])
+      };
+      outputLog.push(tableData);
     }
   };
 
