@@ -1,6 +1,6 @@
 self.onmessage = (e) => {
   let outputLog = [];
-
+  let count = {};
   // Save original console methods
   const originalConsole = {
     log: console.log,
@@ -9,6 +9,11 @@ self.onmessage = (e) => {
     info: console.info,
     debug: console.debug,
     table: console.table,
+    assert: console.assert,
+    clear: console.clear,
+    count: console.count,
+    countReset: console.countReset,
+    group: console.group,
   };
 
   // Overwrite console methods
@@ -82,6 +87,29 @@ self.onmessage = (e) => {
       return outputLog.push(`Debug: ${NewArgs}`);
     };
     console.table = (...args) => handleTable(args);
+    console.assert = (condition, ...args) => {
+      if (!condition) {
+        let NewArgs = args
+          .map((subargs) => {
+            if (typeof subargs === "object") return JSON.stringify(subargs);
+            else if (typeof subargs === "undefined") return "undefined";
+            else if (typeof subargs === "symbol") return subargs.toString();
+            else return subargs;
+          })
+          .join(" ");
+        return outputLog.push(`Assertion failed: ${NewArgs}`);
+      }
+    };
+    console.clear = () => {
+      outputLog = [];
+    };
+    console.count = (label = "default") => {
+      count= {...count, [label]: count[label] ? count[label] + 1 : 1};
+      return outputLog.push(`${label}: ${count[label]}`);
+    };
+    console.countReset = (label = "default") => {
+      count= {...count, [label]: 0};
+    };
   };
 
   // Restore original console methods
@@ -92,6 +120,10 @@ self.onmessage = (e) => {
     console.error = originalConsole.error;
     console.debug = originalConsole.debug;
     console.table = originalConsole.table;
+    console.assert = originalConsole.assert;
+    console.clear = originalConsole.clear;
+    console.count = originalConsole.count;
+    console.countReset = originalConsole.countReset;
   };
 
   // Handle console.table
@@ -186,7 +218,7 @@ self.onmessage = (e) => {
     } else if (typeof args[0] === "object") {
       const tableData = {
         headers: headers(),
-        rows: Object.entries(args[0])
+        rows: Object.entries(args[0]),
       };
       outputLog.push(tableData);
     }
