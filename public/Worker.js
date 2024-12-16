@@ -104,11 +104,11 @@ self.onmessage = (e) => {
       outputLog = [];
     };
     console.count = (label = "default") => {
-      count= {...count, [label]: count[label] ? count[label] + 1 : 1};
+      count = { ...count, [label]: count[label] ? count[label] + 1 : 1 };
       return outputLog.push(`${label}: ${count[label]}`);
     };
     console.countReset = (label = "default") => {
-      count= {...count, [label]: 0};
+      count = { ...count, [label]: 0 };
     };
   };
 
@@ -187,32 +187,59 @@ self.onmessage = (e) => {
       });
     }
     // function that returns headers
-    headers = () => {
+    const headers = () => {
+      let head = maxArr.map((_, i) => i);
       if (ent2DArrRes) {
-        return maxArr.map((_, i) => i);
+        return head;
       } else if (res) {
-        let head = maxArr.map((_, i) => i);
-        return [...head, "Values"];
+        let headersSet = new Set();
+        args[0].forEach((item) => {
+          if (typeof item === "object" && !Array.isArray(item)) {
+            Object.keys(item).forEach((key) => headersSet.add(key));
+          }
+        });
+        return [...head, , "Values", ...headersSet];
       } else {
         return ["Values"];
       }
     };
 
+    const rows = () => {
+      if (!res) {
+        return args[0].map((val, i) => [i, val]);
+      } else {
+        console.log(NewArr);
+        return NewArr.map((val, i) => {
+          if (Array.isArray(val)) {
+            let rowSets = val.map((subval) => {
+              if (Array.isArray(subval)) {
+                return JSON.stringify([...subval]);
+              } else if (typeof subval === "object" && !Array.isArray(subval)) {
+                return [Object.values(subval)];
+              } else {
+                return subval;
+              }
+            }).flat(2);
+            console.log(rowSets);
+            return [i, ...rowSets];
+          } else if (typeof val === "object" && !Array.isArray(val)) {
+            let rowSets = new Set();
+            Object.values(val).forEach((key) => rowSets.add(key));
+            return [i, ...rowSets];
+          }
+        });
+      }
+    };
     if (Array.isArray(args[0])) {
       const tableData = {
         headers: headers(),
-        rows: !res
-          ? args[0].map((val, i) => [i, val])
-          : NewArr.map((val, i) => {
-              if (Array.isArray(val)) {
-                return [
-                  i,
-                  ...val.map((subval) =>
-                    Array.isArray(subval) ? JSON.stringify([...subval]) : subval
-                  ),
-                ];
-              }
-            }),
+        rows: rows(),
+      };
+      outputLog.push(tableData);
+    } else if (typeof args[0] === "object") {
+      const tableData = {
+        headers: headers(),
+        rows: rows(),
       };
       outputLog.push(tableData);
     } else if (typeof args[0] === "object") {
