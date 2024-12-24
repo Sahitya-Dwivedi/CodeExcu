@@ -176,6 +176,8 @@ self.onmessage = (e) => {
             val.push("");
           }
           return val;
+        } else if (typeof val === "object") {
+          return [val];
         } else {
           let spacesNo = maxLength;
           let genSpaces = [];
@@ -198,29 +200,66 @@ self.onmessage = (e) => {
             Object.keys(item).forEach((key) => headersSet.add(key));
           }
         });
-        return [...head, , "Values", ...headersSet];
+        return [...head, "Values", ...headersSet];
+      } else if (typeof args[0] === "object") {
+        return Object.keys(args[0][0]);
       } else {
         return ["Values"];
       }
     };
 
+    let headerKeys = headers();
+
+    // function that returns rows
     const rows = () => {
       if (!res) {
-        return args[0].map((val, i) => [i, val]);
+        return args[0].map((val, i) => {
+          if (typeof val === "object" && !Array.isArray(val)) {
+            return [i, ...Object.values(val)];
+          } else {
+            return [i, val];
+          }
+        });
       } else {
-        console.log(NewArr);
         return NewArr.map((val, i) => {
           if (Array.isArray(val)) {
-            let rowSets = val.map((subval) => {
-              if (Array.isArray(subval)) {
-                return JSON.stringify([...subval]);
-              } else if (typeof subval === "object" && !Array.isArray(subval)) {
-                return [Object.values(subval)];
-              } else {
-                return subval;
-              }
-            }).flat(2);
-            console.log(rowSets);
+            let rowSets = val
+              .map((subval) => {
+                if (Array.isArray(subval)) {
+                  return JSON.stringify([...subval]);
+                } else if (
+                  typeof subval === "object" &&
+                  !Array.isArray(subval)
+                ) {
+                  let objrow = Object.values(subval);
+
+                  let OgNum = 0;
+                  let num = -1;
+                  for (let i = 0; i < headerKeys.length; i++) {
+                    let element = headerKeys[i];
+                    objrow = objrow
+                      .map((val) => {
+                        if (subval[element] === val) {
+                          let genSpaces = [];
+                          num < 0 ? (num = i - OgNum) : (num = i - OgNum - 1);
+                          OgNum = i;
+                          for (let j = 0; j < num; j++) {
+                            genSpaces.push("");
+                          }
+                          return [...genSpaces, val];
+                        } else {
+                          return val;
+                        }
+                      })
+                      .flat(2);
+                  }
+
+                  return [objrow];
+                } else {
+                  return subval;
+                }
+              })
+              .flat(2);
             return [i, ...rowSets];
           } else if (typeof val === "object" && !Array.isArray(val)) {
             let rowSets = new Set();
@@ -232,19 +271,19 @@ self.onmessage = (e) => {
     };
     if (Array.isArray(args[0])) {
       const tableData = {
-        headers: headers(),
+        headers: headerKeys,
         rows: rows(),
       };
       outputLog.push(tableData);
     } else if (typeof args[0] === "object") {
       const tableData = {
-        headers: headers(),
+        headers: headerKeys,
         rows: rows(),
       };
       outputLog.push(tableData);
     } else if (typeof args[0] === "object") {
       const tableData = {
-        headers: headers(),
+        headers: headerKeys,
         rows: Object.entries(args[0]),
       };
       outputLog.push(tableData);
