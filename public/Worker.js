@@ -201,7 +201,7 @@ self.onmessage = (e) => {
           }
         });
         return [...head, "Values", ...headersSet];
-      } else if (typeof args[0] === "object") {
+      } else if (typeof args[0] === "object" && Array.isArray(args[0])) {
         let headersSet = new Set();
         args[0].forEach((item) => {
           if (typeof item === "object" && !Array.isArray(item)) {
@@ -320,7 +320,7 @@ self.onmessage = (e) => {
     } else if (typeof args[0] === "object") {
       const tableData = {
         headers: headerKeys,
-        rows: rows(),
+        rows: Object.entries(args[0])
       };
       outputLog.push(tableData);
     }
@@ -331,7 +331,6 @@ self.onmessage = (e) => {
     try {
       e.data ? eval(e.data) : eval(localStorage.getItem("code"));
     } catch (error) {
-      // originalConsole.error(error);
       outputLog.push(`${error}`);
     }
   };
