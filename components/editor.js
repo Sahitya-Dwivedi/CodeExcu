@@ -20,13 +20,14 @@ const CodeEditor = ({ data }) => {
   }, []);
 
   return (
-    <div>
+    <div className="rounded-xl mb-1 overflow-hidden">
       <Editor
+        className="rounded-xl overflow-y-auto"
         width={"50vw"}
         height={"90vh"}
         defaultLanguage="javascript"
         value={value}
-        theme="vs-dark"
+        theme="hc-black"
         onChange={handleEditorChange}
       />
     </div>

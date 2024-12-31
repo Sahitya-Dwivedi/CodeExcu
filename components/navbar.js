@@ -3,7 +3,7 @@ import { FaPlay } from "react-icons/fa";
 
 const Navbar = ({ letRun }) => {
   return (
-    <nav className="w-screen h-[10vh] border-2 border-b-green-500 border-black rounded-lg relative">
+    <nav className="w-screen h-[10vh]  rounded-lg relative">
       <h1 className="text-3xl font-bold font-serif m-2 p-2">CodeExcu</h1>
       <button
         onClick={() => letRun(true)}

@@ -56,16 +56,17 @@ const Excutor = ({ toRun, ChangeRun }) => {
     }
   }, [ChangeRun, handleEval, toRun]);
   return (
-    <div className="terminal h-[90vh] w-[50vw] overflow-y-auto">
-      <div className="flex absolute right-0">
-        <button
-          onClick={() => setValue([])}
-          className="clear_terminal text-blue-400 text-xl border-2 border-blue-400 rounded-md p-1 m-2  hover:text-black hover:bg-blue-400 transition-all duration-500 ease-in-out h-fit"
-        >
-          <FaTrash />
-        </button>
-        {/* will add later */}
-        {/* <div>
+    <div className="overflow-hidden  bg-gray-800 rounded-xl mx-2 mb-1">
+      <div className="terminal h-[90vh] w-[48vw] overflow-y-auto">
+        <div className="flex absolute right-0">
+          <button
+            onClick={() => setValue([])}
+            className="clear_terminal text-blue-400 text-xl border-2 border-blue-400 rounded-md p-1 m-2  hover:text-black hover:bg-blue-400 transition-all duration-500 ease-in-out h-fit"
+          >
+            <FaTrash />
+          </button>
+          {/* will add later */}
+          {/* <div>
           <button
             onClick={() => setShowOption(!showOption)}
             className="clear_terminal text-blue-400 text-xl border-2 border-blue-400 rounded-md p-1 m-2  hover:text-black hover:bg-blue-400 transition-all duration-500 ease-in-out"
@@ -82,16 +83,17 @@ const Excutor = ({ toRun, ChangeRun }) => {
             </div>
           )}
         </div> */}
-      </div>
-      <div className="terminalData mx-4">
-        {value.map((val) => (
-          <div
-            key={uuidv4()}
-            className="whitespace-pre py-1 my-1 tracking-widest text-wrap"
-          >
-            {val}
-          </div>
-        ))}
+        </div>
+        <div className="terminalData mx-4">
+          {value.map((val) => (
+            <div
+              key={uuidv4()}
+              className="whitespace-pre py-1 my-1 tracking-widest text-wrap"
+            >
+              {val}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
