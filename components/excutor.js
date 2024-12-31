@@ -58,7 +58,7 @@ const Excutor = ({ toRun, ChangeRun }) => {
   return (
     <div className="overflow-hidden  bg-gray-800 rounded-xl mx-2 mb-1">
       <div className="terminal h-[90vh] w-[48vw] overflow-y-auto">
-        <div className="flex absolute right-0">
+        <div className="flex items-end absolute  right-2">
           <button
             onClick={() => setValue([])}
             className="clear_terminal text-blue-400 text-xl border-2 border-blue-400 rounded-md p-1 m-2  hover:text-black hover:bg-blue-400 transition-all duration-500 ease-in-out h-fit"
