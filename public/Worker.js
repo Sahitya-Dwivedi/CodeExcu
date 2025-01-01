@@ -1,6 +1,7 @@
 self.onmessage = (e) => {
   let outputLog = [];
   let count = {};
+  let timeCalc = {};
   // Save original console methods
   const originalConsole = {
     log: console.log,
@@ -13,7 +14,9 @@ self.onmessage = (e) => {
     clear: console.clear,
     count: console.count,
     countReset: console.countReset,
-    group: console.group,
+    // group: console.group,
+    time: console.time,
+    timeEnd: console.timeEnd,
   };
 
   // Overwrite console methods
@@ -108,7 +111,23 @@ self.onmessage = (e) => {
       return outputLog.push(`${label}: ${count[label]}`);
     };
     console.countReset = (label = "default") => {
-      count = { ...count, [label]: 0 };
+      if (count[label]) {
+        count = { ...count, [label]: 0 };
+      } else {
+        return outputLog.push(`⚠️ Counter "${label}" does not exist`);
+      }
+    };
+    console.time = (label = "default") => {
+      timeCalc = { ...timeCalc, [label]: performance.now() };
+    };
+    console.timeEnd = (label = "default") => {
+      if (timeCalc[label]) {
+        const time = performance.now() - timeCalc[label];
+        delete timeCalc[label];
+        return outputLog.push(`${label}: ${time.toFixed(2)}ms`);
+      } else {
+        return outputLog.push(`⚠️ Timer "${label}" does not exist`);
+      }
     };
   };
 
@@ -124,6 +143,8 @@ self.onmessage = (e) => {
     console.clear = originalConsole.clear;
     console.count = originalConsole.count;
     console.countReset = originalConsole.countReset;
+    console.time = originalConsole.time;
+    console.timeEnd = originalConsole.timeEnd;
   };
 
   // Handle console.table
@@ -320,7 +341,7 @@ self.onmessage = (e) => {
     } else if (typeof args[0] === "object") {
       const tableData = {
         headers: headerKeys,
-        rows: Object.entries(args[0])
+        rows: Object.entries(args[0]),
       };
       outputLog.push(tableData);
     }
