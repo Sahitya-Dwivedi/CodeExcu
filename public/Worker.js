@@ -17,6 +17,7 @@ self.onmessage = (e) => {
     // group: console.group,
     time: console.time,
     timeEnd: console.timeEnd,
+    timeLog: console.timeLog,
   };
 
   // Overwrite console methods
@@ -129,6 +130,14 @@ self.onmessage = (e) => {
         return outputLog.push(`⚠️ Timer "${label}" does not exist`);
       }
     };
+    console.timeLog = (label = "default") => {
+      if (timeCalc[label]) {
+        const time = performance.now() - timeCalc[label];
+        return outputLog.push(`${label}: ${time.toFixed(2)}ms`);
+      } else {
+        return outputLog.push(`⚠️ Timer "${label}" does not exist`);
+      }
+    };
   };
 
   // Restore original console methods
@@ -145,6 +154,7 @@ self.onmessage = (e) => {
     console.countReset = originalConsole.countReset;
     console.time = originalConsole.time;
     console.timeEnd = originalConsole.timeEnd;
+    console.timeLog = originalConsole.timeLog;
   };
 
   // Handle console.table
