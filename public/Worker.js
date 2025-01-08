@@ -18,11 +18,55 @@ self.onmessage = (e) => {
     time: console.time,
     timeEnd: console.timeEnd,
     timeLog: console.timeLog,
+    dir: console.dir,
   };
 
   // Overwrite console methods
   const overwriteConsole = () => {
     console.log = (...args) => {
+      let NewArgs = args
+        .map((subargs) => {
+          if (typeof subargs === "object") {
+            /**
+             * Recursively replaces all `undefined` values in an array with the string "undefined".
+             *
+             * @param {Array} arr - The array to process.
+             */
+            function replacer(arr) {
+              arr.forEach((val, i) => {
+                if (typeof val === "undefined") {
+                  arr[i] = "undefined";
+                } else if (Array.isArray(val)) {
+                  replacer(val);
+                }
+              });
+            }
+            if (Array.isArray(subargs)) {
+              replacer(subargs);
+            }
+            function formatObject(obj) {
+              originalConsole.log(Object.entries(obj));
+              return Object.entries(obj)
+                .map(([key, value]) => {
+                  if (typeof value === "function") {
+                    return `${key}: ${`[Function: ${key}]`}`;
+                  } else if (typeof value === "string") {
+                    return `${key}: '${value}'`;
+                  } else {
+                    return `${key}: ${value}`;
+                  }
+                })
+                .join(", ");
+            }
+            return `{${formatObject(subargs)}}`;
+          } else if (typeof subargs === "undefined") return "undefined";
+          else if (typeof subargs === "symbol") return subargs.toString();
+          else return subargs;
+        })
+        .join(" ");
+      return outputLog.push(NewArgs);
+    };
+    console.error = (...args) => {
       let NewArgs = args
         .map((subargs) => {
           if (typeof subargs === "object") {
@@ -38,19 +82,21 @@ self.onmessage = (e) => {
             if (Array.isArray(subargs)) {
               replacer(subargs);
             }
-            return JSON.stringify(subargs);
+            function formatObject(obj) {
+              return Object.entries(obj)
+                .map(([key, value]) => {
+                  if (typeof value === "function") {
+                    return `${key}: ${`[Function: ${key}]`}`;
+                  } else if (typeof value === "string") {
+                    return `${key}: '${value}'`;
+                  } else {
+                    return `${key}: ${value}`;
+                  }
+                })
+                .join(", ");
+            }
+            return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
-          else if (typeof subargs === "symbol") return subargs.toString();
-          else return subargs;
-        })
-        .join(" ");
-      return outputLog.push(NewArgs);
-    };
-    console.error = (...args) => {
-      let NewArgs = args
-        .map((subargs) => {
-          if (typeof subargs === "object") return JSON.stringify(subargs);
-          else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
@@ -60,8 +106,34 @@ self.onmessage = (e) => {
     console.warn = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") return JSON.stringify(subargs);
-          else if (typeof subargs === "undefined") return "undefined";
+          if (typeof subargs === "object") {
+            function replacer(arr) {
+              arr.forEach((val, i) => {
+                if (typeof val === "undefined") {
+                  arr[i] = "undefined";
+                } else if (Array.isArray(val)) {
+                  replacer(val);
+                }
+              });
+            }
+            if (Array.isArray(subargs)) {
+              replacer(subargs);
+            }
+            function formatObject(obj) {
+              return Object.entries(obj)
+                .map(([key, value]) => {
+                  if (typeof value === "function") {
+                    return `${key}: ${`[Function: ${key}]`}`;
+                  } else if (typeof value === "string") {
+                    return `${key}: '${value}'`;
+                  } else {
+                    return `${key}: ${value}`;
+                  }
+                })
+                .join(", ");
+            }
+            return `{${formatObject(subargs)}}`;
+          } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
@@ -71,8 +143,34 @@ self.onmessage = (e) => {
     console.info = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") return JSON.stringify(subargs);
-          else if (typeof subargs === "undefined") return "undefined";
+          if (typeof subargs === "object") {
+            function replacer(arr) {
+              arr.forEach((val, i) => {
+                if (typeof val === "undefined") {
+                  arr[i] = "undefined";
+                } else if (Array.isArray(val)) {
+                  replacer(val);
+                }
+              });
+            }
+            if (Array.isArray(subargs)) {
+              replacer(subargs);
+            }
+            function formatObject(obj) {
+              return Object.entries(obj)
+                .map(([key, value]) => {
+                  if (typeof value === "function") {
+                    return `${key}: ${`[Function: ${key}]`}`;
+                  } else if (typeof value === "string") {
+                    return `${key}: '${value}'`;
+                  } else {
+                    return `${key}: ${value}`;
+                  }
+                })
+                .join(", ");
+            }
+            return `{${formatObject(subargs)}}`;
+          } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
@@ -82,8 +180,34 @@ self.onmessage = (e) => {
     console.debug = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") return JSON.stringify(subargs);
-          else if (typeof subargs === "undefined") return "undefined";
+          if (typeof subargs === "object") {
+            function replacer(arr) {
+              arr.forEach((val, i) => {
+                if (typeof val === "undefined") {
+                  arr[i] = "undefined";
+                } else if (Array.isArray(val)) {
+                  replacer(val);
+                }
+              });
+            }
+            if (Array.isArray(subargs)) {
+              replacer(subargs);
+            }
+            function formatObject(obj) {
+              return Object.entries(obj)
+                .map(([key, value]) => {
+                  if (typeof value === "function") {
+                    return `${key}: ${`[Function: ${key}]`}`;
+                  } else if (typeof value === "string") {
+                    return `${key}: '${value}'`;
+                  } else {
+                    return `${key}: ${value}`;
+                  }
+                })
+                .join(", ");
+            }
+            return `{${formatObject(subargs)}}`;
+          } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
@@ -95,8 +219,34 @@ self.onmessage = (e) => {
       if (!condition) {
         let NewArgs = args
           .map((subargs) => {
-            if (typeof subargs === "object") return JSON.stringify(subargs);
-            else if (typeof subargs === "undefined") return "undefined";
+            if (typeof subargs === "object") {
+              function replacer(arr) {
+                arr.forEach((val, i) => {
+                  if (typeof val === "undefined") {
+                    arr[i] = "undefined";
+                  } else if (Array.isArray(val)) {
+                    replacer(val);
+                  }
+                });
+              }
+              if (Array.isArray(subargs)) {
+                replacer(subargs);
+              }
+              function formatObject(obj) {
+                return Object.entries(obj)
+                  .map(([key, value]) => {
+                    if (typeof value === "function") {
+                      return `${key}: ${`[Function: ${key}]`}`;
+                    } else if (typeof value === "string") {
+                      return `${key}: '${value}'`;
+                    } else {
+                      return `${key}: ${value}`;
+                    }
+                  })
+                  .join(", ");
+              }
+              return `{${formatObject(subargs)}}`;
+            } else if (typeof subargs === "undefined") return "undefined";
             else if (typeof subargs === "symbol") return subargs.toString();
             else return subargs;
           })
@@ -138,6 +288,25 @@ self.onmessage = (e) => {
         return outputLog.push(`⚠️ Timer "${label}" does not exist`);
       }
     };
+    console.dir = (obj, options) => {
+      if (options) {
+        outputLog.push("Console.dir: Options are not supported in this site.");
+      }
+      function formatObjectDir(obj) {
+        return Object.entries(obj)
+          .map(([key, value]) => {
+            if (typeof value === "function") {
+              return `\n\t${key}: ${`[Function: ${key}]`}`;
+            } else if (typeof value === "string") {
+              return `\n\t${key}: '${value}'`;
+            } else {
+              return `\n\t${key}: ${value}`;
+            }
+          })
+          .join(", ");
+      }
+      return outputLog.push(`{${formatObjectDir(obj)}\n}`);
+    };
   };
 
   // Restore original console methods
@@ -155,13 +324,14 @@ self.onmessage = (e) => {
     console.time = originalConsole.time;
     console.timeEnd = originalConsole.timeEnd;
     console.timeLog = originalConsole.timeLog;
+    console.dir = originalConsole.dir;
   };
 
   // Handle console.table
   const handleTable = (args) => {
     let maxLength = 0;
     let maxArr = [];
-
+    let subLen = 0;
     // function that check if array is 2D
     const is2DArr = (arr) =>
       Array.isArray(arr[0]) && arr[0].some(Array.isArray);
@@ -183,8 +353,15 @@ self.onmessage = (e) => {
       arr[0].forEach((subarr) => {
         if (subarr.length > maxLength) {
           maxLength = subarr.length;
-          maxArr = subarr;
-          if (typeof subarr === "string") maxLength = 1;
+          if (Array.isArray(subarr)) {
+            maxArr = subarr;
+            subLen = maxLength;
+          } else if (typeof subarr === "string") {
+            maxLength = 1;
+          }
+          if (subLen != 0) {
+            maxLength = subLen;
+          }
         }
       });
     };
