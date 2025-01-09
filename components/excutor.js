@@ -56,7 +56,7 @@ const Excutor = ({ toRun, ChangeRun }) => {
     }
   }, [ChangeRun, handleEval, toRun]);
   return (
-    <div className="overflow-hidden  bg-gray-800 rounded-xl mx-2 mb-1">
+    <div className="overflow-hidden bg-black rounded-xl mx-2 mb-1">
       <div className="terminal h-[90vh] w-[48vw] overflow-y-auto">
         <div className="flex items-end absolute  right-2">
           <button
