@@ -562,7 +562,7 @@ self.onmessage = (e) => {
   // Evaluate code
   const evaluateCode = () => {
     try {
-      e.data ? eval(e.data) : eval(localStorage.getItem("code"));
+      eval(e.data);
     } catch (error) {
       outputLog.push(`${error}`);
     }
