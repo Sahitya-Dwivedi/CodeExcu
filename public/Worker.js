@@ -26,7 +26,7 @@ self.onmessage = (e) => {
     console.log = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") {
+          if (Array.isArray(subargs)) {
             /**
              * Recursively replaces all `undefined` values in an array with the string "undefined".
              *
@@ -41,11 +41,12 @@ self.onmessage = (e) => {
                 }
               });
             }
-            if (Array.isArray(subargs)) {
-              replacer(subargs);
-            }
+            replacer(subargs);
+            return JSON.stringify(subargs);
+          } else if (subargs === null) {
+            return "null";
+          } else if (typeof subargs === "object") {
             function formatObject(obj) {
-              originalConsole.log(Object.entries(obj));
               return Object.entries(obj)
                 .map(([key, value]) => {
                   if (typeof value === "function") {
@@ -288,7 +289,7 @@ self.onmessage = (e) => {
         return outputLog.push(`⚠️ Timer "${label}" does not exist`);
       }
     };
-    console.dir = (obj, options) => {
+    console.dir = (args, options) => {
       if (options) {
         outputLog.push("Console.dir: Options are not supported in this site.");
       }
@@ -305,7 +306,31 @@ self.onmessage = (e) => {
           })
           .join(", ");
       }
-      return outputLog.push(`{${formatObjectDir(obj)}\n}`);
+      if (args === null) {
+        return outputLog.push("null");
+      } else if (typeof args === "object" && !Array.isArray(args)) {
+        return outputLog.push(`{${formatObjectDir(args)}\n}`);
+      } else if (Array.isArray(args)) {
+        /**
+         * Recursively replaces all `undefined` values in an array with the string "undefined".
+         *
+         * @param {Array} arr - The array to process.
+         */
+        function replacer(arr) {
+          arr.forEach((val, i) => {
+            if (typeof val === "undefined") {
+              arr[i] = "undefined";
+            } else if (Array.isArray(val)) {
+              replacer(val);
+            }
+          });
+        }
+        replacer(args);
+        return outputLog.push(JSON.stringify(args));
+      } else if (typeof args === "undefined")
+        return outputLog.push("undefined");
+      else if (typeof args === "symbol") return outputLog.push(args.toString());
+      else return outputLog.push(args);
     };
   };
 
