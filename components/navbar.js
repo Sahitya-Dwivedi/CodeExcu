@@ -5,7 +5,7 @@ const Navbar = ({ letRun }) => {
   return (
     <nav className="w-screen h-[10vh]  rounded-lg relative flex justify-between items-center">
       <div className="text-3xl font-bold font-serif m-2 p-2 flex items-center gap-2">
-        <h1>CodeExcu| Here you can run</h1>
+        <h1>CodeExcu | Here you can run</h1>
         <h1 className="text-yellow-400">JavaScript</h1>
       </div>
       <h1>
