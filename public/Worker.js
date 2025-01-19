@@ -29,6 +29,23 @@ self.onmessage = (e) => {
 
   // Overwrite console methods
   const overwriteConsole = () => {
+    function formatObject(obj) {
+      return Object.entries(obj)
+        .map(([key, value]) => {
+          if (typeof value === "function") {
+            return `${key}: ${`[Function: ${key}]`}`;
+          } else if (typeof value === "string") {
+            return `${key}: '${value}'`;
+          } else if (typeof value === "object" && !Array.isArray(value)) {
+            return `${key}: {${formatObject(value)}}`;
+          } else if (Array.isArray(value)) {
+            return `${key}: ${JSON.stringify(value)}`;
+          } else {
+            return `${key}: ${value}`;
+          }
+        })
+        .join(", ");
+    }
     console.log = (...args) => {
       let NewArgs = args
         .map((subargs) => {
@@ -52,26 +69,6 @@ self.onmessage = (e) => {
           } else if (subargs === null) {
             return "null";
           } else if (typeof subargs === "object") {
-            function formatObject(obj) {
-              return Object.entries(obj)
-                .map(([key, value]) => {
-                  if (typeof value === "function") {
-                    return `${key}: ${`[Function: ${key}]`}`;
-                  } else if (typeof value === "string") {
-                    return `${key}: '${value}'`;
-                  } else if (
-                    typeof value === "object" &&
-                    !Array.isArray(value)
-                  ) {
-                    return `${key}: {${formatObject(value)}}`;
-                  } else if (Array.isArray(value)) {
-                    return `${key}: ${JSON.stringify(value)}`;
-                  } else {
-                    return `${key}: ${value}`;
-                  }
-                })
-                .join(", ");
-            }
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
@@ -95,19 +92,6 @@ self.onmessage = (e) => {
             }
             if (Array.isArray(subargs)) {
               replacer(subargs);
-            }
-            function formatObject(obj) {
-              return Object.entries(obj)
-                .map(([key, value]) => {
-                  if (typeof value === "function") {
-                    return `${key}: ${`[Function: ${key}]`}`;
-                  } else if (typeof value === "string") {
-                    return `${key}: '${value}'`;
-                  } else {
-                    return `${key}: ${value}`;
-                  }
-                })
-                .join(", ");
             }
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
@@ -133,19 +117,6 @@ self.onmessage = (e) => {
             if (Array.isArray(subargs)) {
               replacer(subargs);
             }
-            function formatObject(obj) {
-              return Object.entries(obj)
-                .map(([key, value]) => {
-                  if (typeof value === "function") {
-                    return `${key}: ${`[Function: ${key}]`}`;
-                  } else if (typeof value === "string") {
-                    return `${key}: '${value}'`;
-                  } else {
-                    return `${key}: ${value}`;
-                  }
-                })
-                .join(", ");
-            }
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
@@ -170,19 +141,6 @@ self.onmessage = (e) => {
             if (Array.isArray(subargs)) {
               replacer(subargs);
             }
-            function formatObject(obj) {
-              return Object.entries(obj)
-                .map(([key, value]) => {
-                  if (typeof value === "function") {
-                    return `${key}: ${`[Function: ${key}]`}`;
-                  } else if (typeof value === "string") {
-                    return `${key}: '${value}'`;
-                  } else {
-                    return `${key}: ${value}`;
-                  }
-                })
-                .join(", ");
-            }
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
@@ -206,19 +164,6 @@ self.onmessage = (e) => {
             }
             if (Array.isArray(subargs)) {
               replacer(subargs);
-            }
-            function formatObject(obj) {
-              return Object.entries(obj)
-                .map(([key, value]) => {
-                  if (typeof value === "function") {
-                    return `${key}: ${`[Function: ${key}]`}`;
-                  } else if (typeof value === "string") {
-                    return `${key}: '${value}'`;
-                  } else {
-                    return `${key}: ${value}`;
-                  }
-                })
-                .join(", ");
             }
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
@@ -246,19 +191,7 @@ self.onmessage = (e) => {
               if (Array.isArray(subargs)) {
                 replacer(subargs);
               }
-              function formatObject(obj) {
-                return Object.entries(obj)
-                  .map(([key, value]) => {
-                    if (typeof value === "function") {
-                      return `${key}: ${`[Function: ${key}]`}`;
-                    } else if (typeof value === "string") {
-                      return `${key}: '${value}'`;
-                    } else {
-                      return `${key}: ${value}`;
-                    }
-                  })
-                  .join(", ");
-              }
+              
               return `{${formatObject(subargs)}}`;
             } else if (typeof subargs === "undefined") return "undefined";
             else if (typeof subargs === "symbol") return subargs.toString();
