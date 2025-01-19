@@ -19,6 +19,7 @@ self.onmessage = (e) => {
     timeEnd: console.timeEnd,
     timeLog: console.timeLog,
     dir: console.dir,
+    dirxml: console.dirxml,
   };
 
   // Overwrite console methods
@@ -53,6 +54,13 @@ self.onmessage = (e) => {
                     return `${key}: ${`[Function: ${key}]`}`;
                   } else if (typeof value === "string") {
                     return `${key}: '${value}'`;
+                  } else if (
+                    typeof value === "object" &&
+                    !Array.isArray(value)
+                  ) {
+                    return `${key}: {${formatObject(value)}}`;
+                  } else if (Array.isArray(value)) {
+                    return `${key}: ${JSON.stringify(value)}`;
                   } else {
                     return `${key}: ${value}`;
                   }
@@ -300,7 +308,13 @@ self.onmessage = (e) => {
               return `\n\t${key}: ${`[Function: ${key}]`}`;
             } else if (typeof value === "string") {
               return `\n\t${key}: '${value}'`;
-            } else {
+            } else if (typeof value === "object" && !Array.isArray(value)) {
+              return `\n\t${key}: {${formatObjectDir(value)}\n\t}`;
+            } else if(Array.isArray(value)) {
+              return `\n\t${key}: ${JSON.stringify(value)}`;
+            }
+             else {
+              console.log("value");
               return `\n\t${key}: ${value}`;
             }
           })
@@ -309,7 +323,7 @@ self.onmessage = (e) => {
       if (args === null) {
         return outputLog.push("null");
       } else if (typeof args === "object" && !Array.isArray(args)) {
-        return outputLog.push(`{${formatObjectDir(args)}\n}`);
+        return outputLog.push(`Object\n{${formatObjectDir(args)}\n}`);
       } else if (Array.isArray(args)) {
         /**
          * Recursively replaces all `undefined` values in an array with the string "undefined".
@@ -332,6 +346,7 @@ self.onmessage = (e) => {
       else if (typeof args === "symbol") return outputLog.push(args.toString());
       else return outputLog.push(args);
     };
+    console.dirxml = console.log;
   };
 
   // Restore original console methods
@@ -350,6 +365,7 @@ self.onmessage = (e) => {
     console.timeEnd = originalConsole.timeEnd;
     console.timeLog = originalConsole.timeLog;
     console.dir = originalConsole.dir;
+    console.dirxml = originalConsole.dirxml;
   };
 
   // Handle console.table
