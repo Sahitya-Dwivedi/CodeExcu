@@ -18,8 +18,13 @@ self.onmessage = (e) => {
     time: console.time,
     timeEnd: console.timeEnd,
     timeLog: console.timeLog,
+    // timeStamp: console.timeStamp, // Not supported in this site
     dir: console.dir,
     dirxml: console.dirxml,
+    // profile: console.profile, // Not supported in this site
+    // profileEnd: console.profileEnd, // Not supported in this site
+    // exception: console.exception, // deprecated
+    // memory: console.memory, // Shows memory stats in environments like Chrome
   };
 
   // Overwrite console methods
@@ -310,10 +315,9 @@ self.onmessage = (e) => {
               return `\n\t${key}: '${value}'`;
             } else if (typeof value === "object" && !Array.isArray(value)) {
               return `\n\t${key}: {${formatObjectDir(value)}\n\t}`;
-            } else if(Array.isArray(value)) {
+            } else if (Array.isArray(value)) {
               return `\n\t${key}: ${JSON.stringify(value)}`;
-            }
-             else {
+            } else {
               console.log("value");
               return `\n\t${key}: ${value}`;
             }
