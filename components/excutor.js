@@ -56,12 +56,14 @@ const Excutor = ({ toRun, ChangeRun }) => {
     }
   }, [ChangeRun, handleEval, toRun]);
   return (
-    <div className="overflow-hidden bg-black rounded-xl mx-2 mb-1">
-      <div className="terminal h-[90vh] w-[48vw] overflow-y-auto">
+    <div className="overflow-hidden bg-black sm:rounded-xl sm:mx-2 sm:mb-1">
+      <div className="terminal h-[45vh] sm:h-[90vh] w-screen sm:w-[48vw] overflow-y-auto">
         <div className="flex items-end absolute  right-2">
           <button
             onClick={() => setValue([])}
             className="clear_terminal text-blue-400 text-xl border-2 border-blue-400 rounded-md p-1 m-2  hover:text-black hover:bg-blue-400 transition-all duration-500 ease-in-out h-fit"
+            name="clear"
+            title="Clear Terminal"
           >
             <FaTrash />
           </button>

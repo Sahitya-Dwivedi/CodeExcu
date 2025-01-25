@@ -18,13 +18,13 @@ const CodeEditor = ({ data }) => {
       setValue(storedCode);
     }
   }, []);
-
+  let width = window.innerWidth < 640;
   return (
-    <div className="rounded-xl mb-1 overflow-hidden">
+    <div className="sm:mb-1 overflow-hidden">
       <Editor
-        className="rounded-xl overflow-y-auto"
-        width={"50vw"}
-        height={"90vh"}
+        className="sm:rounded-xl overflow-y-auto w-[50vw] h-[90vh]"
+        width={width ? "100vw" : "50vw"}
+        height={width ? "50vh" : "90vh"}
         defaultLanguage="javascript"
         value={value}
         theme="hc-black"

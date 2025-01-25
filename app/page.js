@@ -9,12 +9,12 @@ const Home = () => {
   const [run, setRun] = useState(false);
   useEffect(() => {
     alert("The making is in progress. current functioning can be incomplete also");
-  }, [])
-  
+  }, []);
+
   return (
     <div className="flex flex-col justify-end items-end bg-gradient-to-r from-[#0000ff] to-[#ee005f]  h-screen">
       <Navbar letRun={setRun} />
-      <div className="flex justify-end items-end" >
+      <div className="flex justify-end items-end sm:flex-row flex-col-reverse">
         <CodeEditor data={setCode} />
         <Excutor code={code} toRun={run} ChangeRun={setRun} />
       </div>
