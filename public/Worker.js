@@ -14,7 +14,7 @@ self.onmessage = (e) => {
     clear: console.clear,
     count: console.count,
     countReset: console.countReset,
-    // group: console.group,
+    group: console.group,
     time: console.time,
     timeEnd: console.timeEnd,
     timeLog: console.timeLog,
@@ -29,7 +29,7 @@ self.onmessage = (e) => {
 
   // Overwrite console methods
   const overwriteConsole = () => {
-    function formatObject(obj) {
+    const formatObject = (obj) => {
       return Object.entries(obj)
         .map(([key, value]) => {
           if (typeof value === "function") {
@@ -45,16 +45,12 @@ self.onmessage = (e) => {
           }
         })
         .join(", ");
-    }
-    console.log = (...args) => {
+    };
+
+    const handleLog = (...args) => {
       let NewArgs = args
         .map((subargs) => {
           if (Array.isArray(subargs)) {
-            /**
-             * Recursively replaces all `undefined` values in an array with the string "undefined".
-             *
-             * @param {Array} arr - The array to process.
-             */
             function replacer(arr) {
               arr.forEach((val, i) => {
                 if (typeof val === "undefined") {
@@ -75,12 +71,13 @@ self.onmessage = (e) => {
           else return subargs;
         })
         .join(" ");
-      return outputLog.push(NewArgs);
+      return NewArgs;
     };
-    console.error = (...args) => {
+
+    const handleError = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") {
+          if (Array.isArray(subargs)) {
             function replacer(arr) {
               arr.forEach((val, i) => {
                 if (typeof val === "undefined") {
@@ -90,21 +87,24 @@ self.onmessage = (e) => {
                 }
               });
             }
-            if (Array.isArray(subargs)) {
-              replacer(subargs);
-            }
+            replacer(subargs);
+            return JSON.stringify(subargs);
+          } else if (subargs === null) {
+            return "null";
+          } else if (typeof subargs === "object") {
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
         .join(" ");
-      return outputLog.push(`Error: ${NewArgs}`);
+      return `Error: ${NewArgs}`;
     };
-    console.warn = (...args) => {
+
+    const handleWarn = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") {
+          if (Array.isArray(subargs)) {
             function replacer(arr) {
               arr.forEach((val, i) => {
                 if (typeof val === "undefined") {
@@ -114,21 +114,24 @@ self.onmessage = (e) => {
                 }
               });
             }
-            if (Array.isArray(subargs)) {
-              replacer(subargs);
-            }
+            replacer(subargs);
+            return JSON.stringify(subargs);
+          } else if (subargs === null) {
+            return "null";
+          } else if (typeof subargs === "object") {
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
         .join(" ");
-      return outputLog.push(`Warning: ${NewArgs}`);
+      return `Warning: ${NewArgs}`;
     };
-    console.info = (...args) => {
+
+    const handleInfo = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") {
+          if (Array.isArray(subargs)) {
             function replacer(arr) {
               arr.forEach((val, i) => {
                 if (typeof val === "undefined") {
@@ -138,21 +141,24 @@ self.onmessage = (e) => {
                 }
               });
             }
-            if (Array.isArray(subargs)) {
-              replacer(subargs);
-            }
+            replacer(subargs);
+            return JSON.stringify(subargs);
+          } else if (subargs === null) {
+            return "null";
+          } else if (typeof subargs === "object") {
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
         .join(" ");
-      return outputLog.push(`Info: ${NewArgs}`);
+      return `Info: ${NewArgs}`;
     };
-    console.debug = (...args) => {
+
+    const handleDebug = (...args) => {
       let NewArgs = args
         .map((subargs) => {
-          if (typeof subargs === "object") {
+          if (Array.isArray(subargs)) {
             function replacer(arr) {
               arr.forEach((val, i) => {
                 if (typeof val === "undefined") {
@@ -162,23 +168,25 @@ self.onmessage = (e) => {
                 }
               });
             }
-            if (Array.isArray(subargs)) {
-              replacer(subargs);
-            }
+            replacer(subargs);
+            return JSON.stringify(subargs);
+          } else if (subargs === null) {
+            return "null";
+          } else if (typeof subargs === "object") {
             return `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
         })
         .join(" ");
-      return outputLog.push(`Debug: ${NewArgs}`);
+      return `Debug: ${NewArgs}`;
     };
-    console.table = (...args) => handleTable(args);
-    console.assert = (condition, ...args) => {
+
+    const handleAssert = (condition, ...args) => {
       if (!condition) {
         let NewArgs = args
           .map((subargs) => {
-            if (typeof subargs === "object") {
+            if (Array.isArray(subargs)) {
               function replacer(arr) {
                 arr.forEach((val, i) => {
                   if (typeof val === "undefined") {
@@ -188,56 +196,64 @@ self.onmessage = (e) => {
                   }
                 });
               }
-              if (Array.isArray(subargs)) {
-                replacer(subargs);
-              }
-              
+              replacer(subargs);
+              return JSON.stringify(subargs);
+            } else if (subargs === null) {
+              return "null";
+            } else if (typeof subargs === "object") {
               return `{${formatObject(subargs)}}`;
             } else if (typeof subargs === "undefined") return "undefined";
             else if (typeof subargs === "symbol") return subargs.toString();
             else return subargs;
           })
           .join(" ");
-        return outputLog.push(`Assertion failed: ${NewArgs}`);
+        return `Assertion failed: ${NewArgs}`;
       }
     };
-    console.clear = () => {
+
+    const handleClear = () => {
       outputLog = [];
     };
-    console.count = (label = "default") => {
+
+    const handleCount = (label = "default") => {
       count = { ...count, [label]: count[label] ? count[label] + 1 : 1 };
-      return outputLog.push(`${label}: ${count[label]}`);
+      return `${label}: ${count[label]}`;
     };
-    console.countReset = (label = "default") => {
+
+    const handleCountReset = (label = "default") => {
       if (count[label]) {
         count = { ...count, [label]: 0 };
       } else {
-        return outputLog.push(`⚠️ Counter "${label}" does not exist`);
+        return `⚠️ Counter "${label}" does not exist`;
       }
     };
-    console.time = (label = "default") => {
+
+    const handleTime = (label = "default") => {
       timeCalc = { ...timeCalc, [label]: performance.now() };
     };
-    console.timeEnd = (label = "default") => {
+
+    const handleTimeEnd = (label = "default") => {
       if (timeCalc[label]) {
         const time = performance.now() - timeCalc[label];
         delete timeCalc[label];
-        return outputLog.push(`${label}: ${time.toFixed(2)}ms`);
+        return `${label}: ${time.toFixed(2)}ms`;
       } else {
-        return outputLog.push(`⚠️ Timer "${label}" does not exist`);
+        return `⚠️ Timer "${label}" does not exist`;
       }
     };
-    console.timeLog = (label = "default") => {
+
+    const handleTimeLog = (label = "default") => {
       if (timeCalc[label]) {
         const time = performance.now() - timeCalc[label];
-        return outputLog.push(`${label}: ${time.toFixed(2)}ms`);
+        return `${label}: ${time.toFixed(2)}ms`;
       } else {
-        return outputLog.push(`⚠️ Timer "${label}" does not exist`);
+        return `⚠️ Timer "${label}" does not exist`;
       }
     };
-    console.dir = (args, options) => {
+
+    const handleDir = (args, options) => {
       if (options) {
-        outputLog.push("Console.dir: Options are not supported in this site.");
+        return "Console.dir: Options are not supported in this site.";
       }
       function formatObjectDir(obj) {
         return Object.entries(obj)
@@ -251,22 +267,16 @@ self.onmessage = (e) => {
             } else if (Array.isArray(value)) {
               return `\n\t${key}: ${JSON.stringify(value)}`;
             } else {
-              console.log("value");
               return `\n\t${key}: ${value}`;
             }
           })
           .join(", ");
       }
       if (args === null) {
-        return outputLog.push("null");
+        return "null";
       } else if (typeof args === "object" && !Array.isArray(args)) {
-        return outputLog.push(`Object\n{${formatObjectDir(args)}\n}`);
+        return `Object\n{${formatObjectDir(args)}\n}`;
       } else if (Array.isArray(args)) {
-        /**
-         * Recursively replaces all `undefined` values in an array with the string "undefined".
-         *
-         * @param {Array} arr - The array to process.
-         */
         function replacer(arr) {
           arr.forEach((val, i) => {
             if (typeof val === "undefined") {
@@ -277,13 +287,86 @@ self.onmessage = (e) => {
           });
         }
         replacer(args);
-        return outputLog.push(JSON.stringify(args));
-      } else if (typeof args === "undefined")
-        return outputLog.push("undefined");
-      else if (typeof args === "symbol") return outputLog.push(args.toString());
-      else return outputLog.push(args);
+        return JSON.stringify(args);
+      } else if (typeof args === "undefined") return "undefined";
+      else if (typeof args === "symbol") return args.toString();
+      else return args;
     };
-    console.dirxml = console.log;
+    let grpIndent = "\t";
+    const handleGroup = (...args) => {
+      console.log = (...args) => {
+        outputLog.push(`${grpIndent}${handleLog(...args)}`);
+      };
+      console.error = (...args) => {
+        outputLog.push(`\t${handleError(...args)}`);
+      };
+      console.warn = (...args) => {
+        outputLog.push(`\t${handleWarn(...args)}`);
+      };
+      console.info = (...args) => {
+        outputLog.push(`\t${handleInfo(...args)}`);
+      };
+      console.debug = (...args) => {
+        outputLog.push(`\t${handleDebug(...args)}`);
+      };
+      console.table = (...args) => {
+        outputLog.push(`\t${handleTable(...args)}`);
+      };
+      console.assert = (condition, ...args) => {
+        outputLog.push(`\t${handleAssert(condition, ...args)}`);
+      };
+      console.clear = () => {
+        outputLog.push(`\t${handleClear()}`);
+      };
+      console.count = (label) => {
+        outputLog.push(`\t${handleCount(label)}`);
+      };
+      console.countReset = (label) => {
+        outputLog.push(`\t${handleCountReset(label)}`);
+      };
+      console.time = (label) => {
+        outputLog.push(`\t${handleTime(label)}`);
+      };
+      console.timeEnd = (label) => {
+        outputLog.push(`\t${handleTimeEnd(label)}`);
+      };
+      console.timeLog = (label) => {
+        outputLog.push(`\t${handleTimeLog(label)}`);
+      };
+      console.dir = (args, options) => {
+        outputLog.push(`\t${handleDir(args, options)}`);
+      };
+      console.dirxml = (...args) => {
+        outputLog.push(`\t${handleLog(...args)}`);
+      };
+      console.group = (...args) => {
+        outputLog.push(`${grpIndent}${handleGroup(...args)}`);
+        grpIndent += "\t";
+      };
+      
+      if (args.length > 0) {
+        return handleLog(...args);
+      } else
+      return handleLog("console.group");
+    };
+
+    console.log = (...args) => outputLog.push(handleLog(...args));
+    console.error = (...args) => outputLog.push(handleError(...args));
+    console.warn = (...args) => outputLog.push(handleWarn(...args));
+    console.info = (...args) => outputLog.push(handleInfo(...args));
+    console.debug = (...args) => outputLog.push(handleDebug(...args));
+    console.table = (...args) => outputLog.push(handleTable(...args));
+    console.assert = (condition, ...args) =>
+      outputLog.push(handleAssert(condition, ...args));
+    console.clear = () => outputLog.push(handleClear());
+    console.count = (label) => outputLog.push(handleCount(label));
+    console.countReset = (label) => outputLog.push(handleCountReset(label));
+    console.time = (label) => outputLog.push(handleTime(label));
+    console.timeEnd = (label) => outputLog.push(handleTimeEnd(label));
+    console.timeLog = (label) => outputLog.push(handleTimeLog(label));
+    console.dir = (args, options) => outputLog.push(handleDir(args, options));
+    console.dirxml = (...args) => outputLog.push(handleLog(...args));
+    console.group = (...args) => outputLog.push(handleGroup(...args));
   };
 
   // Restore original console methods
@@ -303,6 +386,7 @@ self.onmessage = (e) => {
     console.timeLog = originalConsole.timeLog;
     console.dir = originalConsole.dir;
     console.dirxml = originalConsole.dirxml;
+    console.group = originalConsole.group;
   };
 
   // Handle console.table
@@ -527,5 +611,6 @@ self.onmessage = (e) => {
   restoreConsole();
 
   // Set output log
+  console.log(outputLog);
   self.postMessage(outputLog);
 };
