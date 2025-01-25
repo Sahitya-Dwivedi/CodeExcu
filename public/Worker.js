@@ -15,6 +15,7 @@ self.onmessage = (e) => {
     count: console.count,
     countReset: console.countReset,
     group: console.group,
+    groupEnd: console.groupEnd,
     time: console.time,
     timeEnd: console.timeEnd,
     timeLog: console.timeLog,
@@ -292,81 +293,50 @@ self.onmessage = (e) => {
       else if (typeof args === "symbol") return args.toString();
       else return args;
     };
-    let grpIndent = "\t";
+    let grpIndent = "";
     const handleGroup = (...args) => {
-      console.log = (...args) => {
-        outputLog.push(`${grpIndent}${handleLog(...args)}`);
-      };
-      console.error = (...args) => {
-        outputLog.push(`\t${handleError(...args)}`);
-      };
-      console.warn = (...args) => {
-        outputLog.push(`\t${handleWarn(...args)}`);
-      };
-      console.info = (...args) => {
-        outputLog.push(`\t${handleInfo(...args)}`);
-      };
-      console.debug = (...args) => {
-        outputLog.push(`\t${handleDebug(...args)}`);
-      };
-      console.table = (...args) => {
-        outputLog.push(`\t${handleTable(...args)}`);
-      };
-      console.assert = (condition, ...args) => {
-        outputLog.push(`\t${handleAssert(condition, ...args)}`);
-      };
-      console.clear = () => {
-        outputLog.push(`\t${handleClear()}`);
-      };
-      console.count = (label) => {
-        outputLog.push(`\t${handleCount(label)}`);
-      };
-      console.countReset = (label) => {
-        outputLog.push(`\t${handleCountReset(label)}`);
-      };
-      console.time = (label) => {
-        outputLog.push(`\t${handleTime(label)}`);
-      };
-      console.timeEnd = (label) => {
-        outputLog.push(`\t${handleTimeEnd(label)}`);
-      };
-      console.timeLog = (label) => {
-        outputLog.push(`\t${handleTimeLog(label)}`);
-      };
-      console.dir = (args, options) => {
-        outputLog.push(`\t${handleDir(args, options)}`);
-      };
-      console.dirxml = (...args) => {
-        outputLog.push(`\t${handleLog(...args)}`);
-      };
-      console.group = (...args) => {
-        outputLog.push(`${grpIndent}${handleGroup(...args)}`);
-        grpIndent += "\t";
-      };
-      
+      grpIndent += "\t";
       if (args.length > 0) {
         return handleLog(...args);
-      } else
-      return handleLog("console.group");
+      } else return handleLog("console.group");
+    };
+    const handleGroupEnd = () => {
+      grpIndent = grpIndent.slice(0, -1);
+      return;
     };
 
-    console.log = (...args) => outputLog.push(handleLog(...args));
-    console.error = (...args) => outputLog.push(handleError(...args));
-    console.warn = (...args) => outputLog.push(handleWarn(...args));
-    console.info = (...args) => outputLog.push(handleInfo(...args));
-    console.debug = (...args) => outputLog.push(handleDebug(...args));
-    console.table = (...args) => outputLog.push(handleTable(...args));
+    console.log = (...args) =>
+      outputLog.push(`${grpIndent}${handleLog(...args)}`);
+    console.error = (...args) =>
+      outputLog.push(`${grpIndent}${handleError(...args)}`);
+    console.warn = (...args) =>
+      outputLog.push(`${grpIndent}${handleWarn(...args)}`);
+    console.info = (...args) =>
+      outputLog.push(`${grpIndent}${handleInfo(...args)}`);
+    console.debug = (...args) =>
+      outputLog.push(`${grpIndent}${handleDebug(...args)}`);
+    console.table = (...args) =>
+      outputLog.push(`${grpIndent}${handleTable(...args)}`);
     console.assert = (condition, ...args) =>
-      outputLog.push(handleAssert(condition, ...args));
-    console.clear = () => outputLog.push(handleClear());
-    console.count = (label) => outputLog.push(handleCount(label));
-    console.countReset = (label) => outputLog.push(handleCountReset(label));
-    console.time = (label) => outputLog.push(handleTime(label));
-    console.timeEnd = (label) => outputLog.push(handleTimeEnd(label));
-    console.timeLog = (label) => outputLog.push(handleTimeLog(label));
-    console.dir = (args, options) => outputLog.push(handleDir(args, options));
-    console.dirxml = (...args) => outputLog.push(handleLog(...args));
-    console.group = (...args) => outputLog.push(handleGroup(...args));
+      outputLog.push(`${grpIndent}${handleAssert(condition, ...args)}`);
+    console.clear = () => outputLog.push(`${grpIndent}${handleClear()}`);
+    console.count = (label) =>
+      outputLog.push(`${grpIndent}${handleCount(label)}`);
+    console.countReset = (label) =>
+      outputLog.push(`${grpIndent}${handleCountReset(label)}`);
+    console.time = (label) =>
+      outputLog.push(`${grpIndent}${handleTime(label)}`);
+    console.timeEnd = (label) =>
+      outputLog.push(`${grpIndent}${handleTimeEnd(label)}`);
+    console.timeLog = (label) =>
+      outputLog.push(`${grpIndent}${handleTimeLog(label)}`);
+    console.dir = (args, options) =>
+      outputLog.push(`${grpIndent}${handleDir(args, options)}`);
+    console.dirxml = (...args) =>
+      outputLog.push(`${grpIndent}${handleLog(...args)}`);
+    console.group = (...args) =>
+      outputLog.push(`${grpIndent}${handleGroup(...args)}`);
+    console.groupEnd = () => handleGroupEnd();
   };
 
   // Restore original console methods
@@ -611,6 +581,5 @@ self.onmessage = (e) => {
   restoreConsole();
 
   // Set output log
-  console.log(outputLog);
   self.postMessage(outputLog);
 };
