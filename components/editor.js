@@ -3,6 +3,7 @@ import { Editor } from "@monaco-editor/react";
 const CodeEditor = ({ data }) => {
   const editor = useRef(null);
   const [value, setValue] = useState(`// Your JavaScript code here`);
+  const [width, setWidth] = useState(false);
   const handleEditorChange = (editorRef) => {
     editor.current = editorRef;
     saveToLocalStorage();
@@ -17,8 +18,8 @@ const CodeEditor = ({ data }) => {
     if (storedCode) {
       setValue(storedCode);
     }
+    setWidth(window.innerWidth < 640);
   }, []);
-  let width = window.innerWidth < 640;
   return (
     <div className="sm:mb-1 overflow-hidden">
       <Editor
