@@ -16,6 +16,7 @@ self.onmessage = (e) => {
     countReset: console.countReset,
     group: console.group,
     groupEnd: console.groupEnd,
+    groupCollapsed: console.groupCollapsed,
     time: console.time,
     timeEnd: console.timeEnd,
     timeLog: console.timeLog,
@@ -337,6 +338,8 @@ self.onmessage = (e) => {
     console.group = (...args) =>
       outputLog.push(`${grpIndent}${handleGroup(...args)}`);
     console.groupEnd = () => handleGroupEnd();
+    console.groupCollapsed = (...args) =>
+      outputLog.push(`${grpIndent}${handleGroup(...args)}`);
   };
 
   // Restore original console methods
@@ -357,6 +360,8 @@ self.onmessage = (e) => {
     console.dir = originalConsole.dir;
     console.dirxml = originalConsole.dirxml;
     console.group = originalConsole.group;
+    console.groupEnd = originalConsole.groupEnd;
+    console.groupCollapsed = originalConsole.groupCollapsed;
   };
 
   // Handle console.table
