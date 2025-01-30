@@ -23,6 +23,7 @@ self.onmessage = (e) => {
     // timeStamp: console.timeStamp, // Not supported in this site
     dir: console.dir,
     dirxml: console.dirxml,
+    trace: console.trace,
     // profile: console.profile, // Not supported in this site
     // profileEnd: console.profileEnd, // Not supported in this site
     // exception: console.exception, // deprecated
@@ -294,16 +295,70 @@ self.onmessage = (e) => {
       else if (typeof args === "symbol") return args.toString();
       else return args;
     };
+
     let grpIndent = "";
+
     const handleGroup = (...args) => {
       grpIndent += "\t";
       if (args.length > 0) {
         return handleLog(...args);
       } else return handleLog("console.group");
     };
+
     const handleGroupEnd = () => {
       grpIndent = grpIndent.slice(0, -1);
       return;
+    };
+
+    /**
+     * Handles tracing of function calls and logs the stack trace.
+     *
+     * @param {...any} args - The arguments to be logged.
+     * @returns {string} The formatted log message with the stack trace.
+     */
+    const handleTrace = (...args) => {
+      const err = new Error();
+      Error.stackTraceLimit = Infinity;
+      Error.prepareStackTrace = (err, stack) => {
+        return stack
+          .map((frame) => {
+            if (frame.getFunctionName() != "console.trace") {
+              return `${frame.getFunctionName() || "anonymous"} at ${
+                frame.getFileName() || "script.js"
+              }:${frame.getLineNumber()}`;
+            }
+          })
+          .join("\n");
+      };
+      Error.captureStackTrace(err, handleTrace);
+
+      // Get the stack trace and split it into lines
+      const stackLines = err.stack.split("\n");
+      const replaceLastEvalWithAnonymous = (stackLines) => {
+        const lastEvalIndex =
+          stackLines.findIndex((line) => line.includes("eval")) + 1;
+        if (lastEvalIndex !== -1) {
+          if (stackLines[lastEvalIndex].includes("eval")) {
+            stackLines[lastEvalIndex] = stackLines[lastEvalIndex].replace(
+              "eval",
+              "(anonymous)"
+            );
+          }
+        }
+        return stackLines;
+      };
+
+      const updatedStackLines = replaceLastEvalWithAnonymous(stackLines);
+
+      // Remove the last 3 lines from the stack trace
+      const trimmedStackLines = updatedStackLines.slice(0, -2);
+
+      // Join the trimmed stack lines back into a single string
+      const trimmedStack = trimmedStackLines.join("\n");
+
+      if (args.length > 0) {
+        return `${handleLog(...args)}${trimmedStack}`;
+      } else return `${handleLog("console.trace")}${trimmedStack}`;
     };
 
     console.log = (...args) =>
@@ -340,6 +395,8 @@ self.onmessage = (e) => {
     console.groupEnd = () => handleGroupEnd();
     console.groupCollapsed = (...args) =>
       outputLog.push(`${grpIndent}${handleGroup(...args)}`);
+    console.trace = (...args) =>
+      outputLog.push(`${grpIndent}${handleTrace(...args)}`);
   };
 
   // Restore original console methods
