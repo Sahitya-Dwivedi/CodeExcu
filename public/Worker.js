@@ -335,16 +335,19 @@ self.onmessage = (e) => {
       // Get the stack trace and split it into lines
       const stackLines = err.stack.split("\n");
       const replaceLastEvalWithAnonymous = (stackLines) => {
-        const lastEvalIndex =
-          stackLines.findIndex((line) => line.includes("eval")) + 1;
-        if (lastEvalIndex !== -1) {
-          if (stackLines[lastEvalIndex].includes("eval")) {
-            stackLines[lastEvalIndex] = stackLines[lastEvalIndex].replace(
-              "eval",
-              "(anonymous)"
-            );
-          }
+        originalConsole.log(stackLines);
+        const evalIndices = stackLines.reduce((acc, line, index) => {
+          if (line.includes("eval")) acc.push(index);
+          return acc;
+        }, []);
+        if (evalIndices.length > 1) {
+          const lastEvalIndex = evalIndices[evalIndices.length -2];
+          stackLines[lastEvalIndex] = stackLines[lastEvalIndex].replace(
+        "eval",
+        "(anonymous)"
+          );
         }
+
         return stackLines;
       };
 
@@ -419,6 +422,7 @@ self.onmessage = (e) => {
     console.group = originalConsole.group;
     console.groupEnd = originalConsole.groupEnd;
     console.groupCollapsed = originalConsole.groupCollapsed;
+    console.trace = originalConsole.trace;
   };
 
   // Handle console.table
