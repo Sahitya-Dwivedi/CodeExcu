@@ -297,12 +297,12 @@ self.onmessage = (e) => {
     };
 
     let grpIndent = "";
-
+    let grpType = "";
     const handleGroup = (...args) => {
       grpIndent += "\t";
       if (args.length > 0) {
         return handleLog(...args);
-      } else return handleLog("console.group");
+      } else return handleLog(grpType);
     };
 
     const handleGroupEnd = () => {
@@ -323,7 +323,9 @@ self.onmessage = (e) => {
         return stack
           .map((frame) => {
             if (frame.getFunctionName() != "console.trace") {
-              return `${frame.getFunctionName() || "anonymous"} at ${
+              return `${grpIndent}${
+                frame.getFunctionName() || "anonymous"
+              } at ${
                 frame.getFileName() || "script.js"
               }:${frame.getLineNumber()}`;
             }
@@ -341,10 +343,10 @@ self.onmessage = (e) => {
           return acc;
         }, []);
         if (evalIndices.length > 1) {
-          const lastEvalIndex = evalIndices[evalIndices.length -2];
+          const lastEvalIndex = evalIndices[evalIndices.length - 2];
           stackLines[lastEvalIndex] = stackLines[lastEvalIndex].replace(
-        "eval",
-        "(anonymous)"
+            "eval",
+            "(anonymous)"
           );
         }
 
@@ -393,11 +395,15 @@ self.onmessage = (e) => {
       outputLog.push(`${grpIndent}${handleDir(args, options)}`);
     console.dirxml = (...args) =>
       outputLog.push(`${grpIndent}${handleLog(...args)}`);
-    console.group = (...args) =>
+    console.group = (...args) => {
+      grpType = "console.group";
       outputLog.push(`${grpIndent}${handleGroup(...args)}`);
+    };
     console.groupEnd = () => handleGroupEnd();
-    console.groupCollapsed = (...args) =>
+    console.groupCollapsed = (...args) => {
+      grpType = "console.groupCollapsed";
       outputLog.push(`${grpIndent}${handleGroup(...args)}`);
+    };
     console.trace = (...args) =>
       outputLog.push(`${grpIndent}${handleTrace(...args)}`);
   };
