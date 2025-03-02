@@ -376,8 +376,7 @@ self.onmessage = (e) => {
       outputLog.push(`${grpIndent}${handleInfo(...args)}`);
     console.debug = (...args) =>
       outputLog.push(`${grpIndent}${handleDebug(...args)}`);
-    console.table = (...args) =>
-      outputLog.push(`${grpIndent}${handleTable(...args)}`);
+    console.table = (args) => handleTable(args);
     console.assert = (condition, ...args) =>
       outputLog.push(`${grpIndent}${handleAssert(condition, ...args)}`);
     console.clear = () => outputLog.push(`${grpIndent}${handleClear()}`);
@@ -433,209 +432,51 @@ self.onmessage = (e) => {
 
   // Handle console.table
   const handleTable = (args) => {
-    let maxLength = 0;
-    let maxArr = [];
-    let subLen = 0;
-    // function that check if array is 2D
-    const is2DArr = (arr) =>
-      Array.isArray(arr[0]) && arr[0].some(Array.isArray);
+    // originalConsole.table(args);
+    // Check if the array is 1D, 2D or nested
+    const is1DArray = (arr) =>
+      Array.isArray(arr) && arr.every((val) => !Array.isArray(val));
+    const is2DArray = (arr) =>
+      Array.isArray(arr) && arr.every((val) => Array.isArray(val));
+    const isNestedArray = (arr) => arr.some((val) => Array.isArray(val));
 
-    // function that check if array is entirely 2D
-    const isEntire2DArray = (arr) =>
-      arr.every((subarray) => Array.isArray(subarray));
-
-    // Check length of subarrays and find max length
-    const checkLength = (arr) => {
-      arr[0] = arr[0].map((subarr) => {
-        if (subarr === null) {
-          return ["null"];
-        } else if (subarr === undefined) {
-          return ["undefined"];
-        }
-        return subarr;
-      });
-      arr[0].forEach((subarr) => {
-        if (subarr.length > maxLength) {
-          maxLength = subarr.length;
-          if (Array.isArray(subarr)) {
-            maxArr = subarr;
-            subLen = maxLength;
-          } else if (typeof subarr === "string") {
-            maxLength = 1;
+    // Stringify arrays
+    function InDepthStringification(arr) {
+      return arr.map((val) => {
+        return val.map((subVal) => {
+          if (Array.isArray(subVal)) {
+            return JSON.stringify(subVal);
+          } else {
+            return subVal;
           }
-          if (subLen != 0) {
-            maxLength = subLen;
-          }
-        }
-      });
-    };
-
-    // checking if array is 2D
-    const res = is2DArr(args);
-    // checking if array is entirely 2D
-    let ent2DArrRes = false;
-
-    let NewArr = [];
-
-    if (res) {
-      ent2DArrRes = isEntire2DArray(args[0]);
-      checkLength(args);
-      // adding empty strings to subarrays
-      NewArr = args[0].map((val) => {
-        if (Array.isArray(val)) {
-          let spacesNo = maxLength - val.length;
-          for (let i = 0; i < spacesNo; i++) {
-            val.push("");
-          }
-          return val;
-        } else if (typeof val === "object") {
-          return [val];
-        } else {
-          let spacesNo = maxLength;
-          let genSpaces = [];
-          for (let i = 0; i < spacesNo; i++) {
-            genSpaces.push("");
-          }
-          return [...genSpaces, val];
-        }
+        });
       });
     }
-    // function that returns headers
-    const headers = () => {
-      let head = maxArr.map((_, i) => i);
-      if (ent2DArrRes) {
-        return head;
-      } else if (res) {
-        let headersSet = new Set();
-        args[0].forEach((item) => {
-          if (typeof item === "object" && !Array.isArray(item)) {
-            Object.keys(item).forEach((key) => headersSet.add(key));
-          }
-        });
-        return [...head, "Values", ...headersSet];
-      } else if (typeof args[0] === "object" && Array.isArray(args[0])) {
-        let headersSet = new Set();
-        args[0].forEach((item) => {
-          if (typeof item === "object" && !Array.isArray(item)) {
-            Object.keys(item).forEach((key) => headersSet.add(key));
-          }
-        });
-        if (headersSet.size > 0) return [...headersSet];
-        else return [...headersSet, "Values"];
-      } else {
-        return ["Values"];
+
+    // Generate table
+    const header = () => {
+      if (is1DArray(args)) return ["Value"];
+      else if (is2DArray(args)) {
+        let maxLength = Math.max(...args.map((arr) => arr.length));
+        let transHeader = Array.from({ length: maxLength }, (_, i) => i);
+        return transHeader;
       }
     };
-
-    // Function to ensure no item is repeated in headerKeys
-    const ensureUniqueHeaders = (headers) => {
-      return Array.from(new Set(headers));
-    };
-    let headerKeys = ensureUniqueHeaders(headers());
-
-    // function that returns rows
     const rows = () => {
-      if (!res) {
-        const transformedArr = args[0].map((item) => [item]);
-        return transformedArr.map((val, i) => {
-          let rowSets = val
-            .map((subval) => {
-              if (Array.isArray(subval)) {
-                return JSON.stringify([...subval]);
-              } else if (typeof subval === "object" && !Array.isArray(subval)) {
-                let objrow = Object.values(subval);
-
-                let OgNum = 0;
-                let num = -1;
-                for (let i = 0; i < headerKeys.length; i++) {
-                  let element = headerKeys[i];
-                  objrow = objrow
-                    .map((val) => {
-                      if (subval[element] === val) {
-                        let genSpaces = [];
-                        num < 0 ? (num = i - OgNum) : (num = i - OgNum - 1);
-                        OgNum = i;
-                        for (let j = 0; j < num; j++) {
-                          genSpaces.push("");
-                        }
-                        return [...genSpaces, val];
-                      } else {
-                        return val;
-                      }
-                    })
-                    .flat(2);
-                }
-
-                return [objrow];
-              } else {
-                return subval;
-              }
-            })
-            .flat(2);
-          return [i, ...rowSets];
-        });
-      } else {
-        return NewArr.map((val, i) => {
-          if (Array.isArray(val)) {
-            let rowSets = val
-              .map((subval) => {
-                if (Array.isArray(subval)) {
-                  return JSON.stringify([...subval]);
-                } else if (
-                  typeof subval === "object" &&
-                  !Array.isArray(subval)
-                ) {
-                  let objrow = Object.values(subval);
-
-                  let OgNum = 0;
-                  let num = -1;
-                  for (let i = 0; i < headerKeys.length; i++) {
-                    let element = headerKeys[i];
-                    objrow = objrow
-                      .map((val) => {
-                        if (subval[element] === val) {
-                          let genSpaces = [];
-                          num < 0 ? (num = i - OgNum) : (num = i - OgNum - 1);
-                          OgNum = i;
-                          for (let j = 0; j < num; j++) {
-                            genSpaces.push("");
-                          }
-                          return [...genSpaces, val];
-                        } else {
-                          return val;
-                        }
-                      })
-                      .flat(2);
-                  }
-
-                  return [objrow];
-                } else {
-                  return subval;
-                }
-              })
-              .flat(2);
-            return [i, ...rowSets];
-          } else if (typeof val === "object" && !Array.isArray(val)) {
-            let rowSets = new Set();
-            Object.values(val).forEach((key) => rowSets.add(key));
-            return [i, ...rowSets];
-          }
-        });
+      if (is1DArray(args)) {
+        let transRow = args.map((val, i) => [i, val]);
+        return transRow;
+      } else if (is2DArray(args)) {
+        args = InDepthStringification(args);
+        let transRow = args.map((arr, i) => [i, ...arr]);
+        return transRow;
       }
     };
-    if (Array.isArray(args[0])) {
-      const tableData = {
-        headers: headerKeys,
-        rows: rows(),
-      };
-      outputLog.push(tableData);
-    } else if (typeof args[0] === "object") {
-      const tableData = {
-        headers: headerKeys,
-        rows: Object.entries(args[0]),
-      };
-      outputLog.push(tableData);
-    }
+    let table = {
+      headers: header(),
+      rows: rows(),
+    };
+    return outputLog.push(table);
   };
 
   // Evaluate code
