@@ -432,13 +432,14 @@ self.onmessage = (e) => {
 
   // Handle console.table
   const handleTable = (args) => {
-    // originalConsole.table(args);
+    originalConsole.table(args);
     // Check if the array is 1D, 2D or nested
     const is1DArray = (arr) =>
       Array.isArray(arr) && arr.every((val) => !Array.isArray(val));
     const is2DArray = (arr) =>
       Array.isArray(arr) && arr.every((val) => Array.isArray(val));
-    const isNestedArray = (arr) => arr.some((val) => Array.isArray(val));
+    const isNestedArray = (arr) =>
+      Array.isArray(arr) && arr.some((val) => Array.isArray(val));
 
     // Stringify arrays
     function InDepthStringification(arr) {
@@ -453,6 +454,12 @@ self.onmessage = (e) => {
       });
     }
 
+    // generating extra spaces for table
+    const generateSpaces = (str, maxLength) => {
+      let spaces = maxLength;
+      return [..." ".repeat(spaces)]
+    };
+
     // Generate table
     const header = () => {
       if (is1DArray(args)) return ["Value"];
@@ -460,6 +467,13 @@ self.onmessage = (e) => {
         let maxLength = Math.max(...args.map((arr) => arr.length));
         let transHeader = Array.from({ length: maxLength }, (_, i) => i);
         return transHeader;
+      } else if (isNestedArray(args)) {
+        let maxLength = Math.max(
+          ...args.map((arr) => (Array.isArray(arr) ? arr.length : 0))
+        );
+        let transHeader = Array.from({ length: maxLength }, (_, i) => i);
+        console.log(transHeader);
+        return [...transHeader, "Values"];
       }
     };
     const rows = () => {
@@ -469,6 +483,20 @@ self.onmessage = (e) => {
       } else if (is2DArray(args)) {
         args = InDepthStringification(args);
         let transRow = args.map((arr, i) => [i, ...arr]);
+        return transRow;
+      } else if (isNestedArray(args)) {
+        let maxLength = Math.max(
+          ...args.map((arr) => (Array.isArray(arr) ? arr.length : 0))
+        );
+        originalConsole.log(maxLength);
+        let transRow = args.map((arr, i) => {
+          if (Array.isArray(arr)) {
+            return [i, ...arr, ""];
+          } else {
+            return [i, ...generateSpaces(0, maxLength), arr];
+          }
+        });
+        transRow = InDepthStringification(transRow);
         return transRow;
       }
     };
