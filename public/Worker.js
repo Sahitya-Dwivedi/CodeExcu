@@ -337,7 +337,6 @@ self.onmessage = (e) => {
       // Get the stack trace and split it into lines
       const stackLines = err.stack.split("\n");
       const replaceLastEvalWithAnonymous = (stackLines) => {
-        originalConsole.log(stackLines);
         const evalIndices = stackLines.reduce((acc, line, index) => {
           if (line.includes("eval")) acc.push(index);
           return acc;
@@ -457,11 +456,43 @@ self.onmessage = (e) => {
     // generating extra spaces for table
     const generateSpaces = (str, maxLength) => {
       let spaces = maxLength;
-      return [..." ".repeat(spaces)]
+      return Array(spaces).fill(null);
+    };
+
+    // Replace holes with null
+    const replaceHoles = (arr) => {
+      return arr.map((val) => {
+        if (Array.isArray(val)) {
+          return replaceHoles(val);
+        } else if (val === undefined) {
+          return null;
+        } else {
+          return val;
+        }
+      });
     };
 
     // Generate table
     const header = () => {
+      // Handle undefined and null values
+      const handleUndefinedAndNull = (arr) => {
+        return arr.map((val) => {
+          if (Array.isArray(val)) {
+            return handleUndefinedAndNull(val);
+          } else if (val === undefined) {
+            return "undefined";
+          } else if (val === null) {
+            return "null";
+          } else {
+            return val;
+          }
+        });
+      };
+      args = handleUndefinedAndNull(args);
+
+      // handling arrays holes
+      args = [...replaceHoles(args)];
+
       if (is1DArray(args)) return ["Value"];
       else if (is2DArray(args)) {
         let maxLength = Math.max(...args.map((arr) => arr.length));
@@ -472,7 +503,6 @@ self.onmessage = (e) => {
           ...args.map((arr) => (Array.isArray(arr) ? arr.length : 0))
         );
         let transHeader = Array.from({ length: maxLength }, (_, i) => i);
-        console.log(transHeader);
         return [...transHeader, "Values"];
       }
     };
@@ -488,7 +518,6 @@ self.onmessage = (e) => {
         let maxLength = Math.max(
           ...args.map((arr) => (Array.isArray(arr) ? arr.length : 0))
         );
-        originalConsole.log(maxLength);
         let transRow = args.map((arr, i) => {
           if (Array.isArray(arr)) {
             return [i, ...arr, ""];
@@ -522,5 +551,6 @@ self.onmessage = (e) => {
   restoreConsole();
 
   // Set output log
+  originalConsole.log(outputLog);
   self.postMessage(outputLog);
 };
