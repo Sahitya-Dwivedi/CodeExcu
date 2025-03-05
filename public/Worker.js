@@ -443,18 +443,24 @@ self.onmessage = (e) => {
     // Stringify arrays
     function InDepthStringification(arr) {
       return arr.map((val) => {
-        return val.map((subVal) => {
-          if (Array.isArray(subVal)) {
-            return JSON.stringify(subVal);
-          } else {
-            return subVal;
-          }
-        });
+        if (Array.isArray(val)) {
+          return val.map((subVal) => {
+            if (Array.isArray(subVal)) {
+              return JSON.stringify(subVal);
+            } else if (typeof subVal === "string") {
+              return `'${subVal}'`;
+            } else {
+              return subVal;
+            }
+          });
+        } else {
+          return val;
+        }
       });
     }
 
     // generating extra spaces for table
-    const generateSpaces = (str, maxLength) => {
+    const generateSpaces = (maxLength) => {
       let spaces = maxLength;
       return Array(spaces).fill(null);
     };
@@ -472,36 +478,39 @@ self.onmessage = (e) => {
       });
     };
 
+    // Handle undefined and null values
+    const handleUndefinedAndNull = (arr) => {
+      return arr.map((val) => {
+        if (Array.isArray(val)) {
+          return handleUndefinedAndNull(val);
+        } else if (val === undefined) {
+          return "undefined";
+        } else if (val === null) {
+          return "null";
+        } else {
+          return val;
+        }
+      });
+    };
+
     // Generate table
     const header = () => {
-      // Handle undefined and null values
-      const handleUndefinedAndNull = (arr) => {
-        return arr.map((val) => {
-          if (Array.isArray(val)) {
-            return handleUndefinedAndNull(val);
-          } else if (val === undefined) {
-            return "undefined";
-          } else if (val === null) {
-            return "null";
-          } else {
-            return val;
-          }
-        });
-      };
-      args = handleUndefinedAndNull(args);
+      let HeaderArgs = [...args];
+      // let HeaderArgs = [...replaceHoles(args)];
 
-      // handling arrays holes
-      args = [...replaceHoles(args)];
-
-      if (is1DArray(args)) return ["Value"];
-      else if (is2DArray(args)) {
-        let maxLength = Math.max(...args.map((arr) => arr.length));
+      if (is1DArray(HeaderArgs)) return ["Value"];
+      else if (is2DArray(HeaderArgs)) {
+        let maxLength = Math.max(...HeaderArgs.map((arr) => arr.length));
         let transHeader = Array.from({ length: maxLength }, (_, i) => i);
         return transHeader;
-      } else if (isNestedArray(args)) {
+      } else if (isNestedArray(HeaderArgs)) {
+        // let maxLength = Math.max(
+        //   ...HeaderArgs.map((arr) => (Array.isArray(arr) ? arr.length : 0))
+        // );
         let maxLength = Math.max(
-          ...args.map((arr) => (Array.isArray(arr) ? arr.length : 0))
+          ...HeaderArgs.map((arr) => (Array.isArray(arr) ? arr.length : 0))
         );
+
         let transHeader = Array.from({ length: maxLength }, (_, i) => i);
         return [...transHeader, "Values"];
       }
@@ -515,17 +524,26 @@ self.onmessage = (e) => {
         let transRow = args.map((arr, i) => [i, ...arr]);
         return transRow;
       } else if (isNestedArray(args)) {
+        originalConsole.log(args);
         let maxLength = Math.max(
-          ...args.map((arr) => (Array.isArray(arr) ? arr.length : 0))
+          ...args
+            .map((arr) => (Array.isArray(arr) ? arr.length : 0))
+            .filter((length) => !isNaN(length))
         );
-        let transRow = args.map((arr, i) => {
+        let transRow = args;
+        transRow = InDepthStringification(transRow);
+        transRow = handleUndefinedAndNull(transRow);
+
+        transRow = transRow.map((arr, i) => {
           if (Array.isArray(arr)) {
-            return [i, ...arr, ""];
+            return [i, ...arr, null];
           } else {
-            return [i, ...generateSpaces(0, maxLength), arr];
+            return [i, ...generateSpaces(maxLength), arr];
           }
         });
-        transRow = InDepthStringification(transRow);
+
+        // handling arrays holes
+        transRow = [...replaceHoles(transRow)];
         return transRow;
       }
     };
@@ -541,6 +559,7 @@ self.onmessage = (e) => {
     try {
       eval(e.data);
     } catch (error) {
+      originalConsole.error(error);
       outputLog.push(`${error}`);
     }
   };
