@@ -467,15 +467,15 @@ self.onmessage = (e) => {
 
     // Replace holes with null
     const replaceHoles = (arr) => {
-      return arr.map((val) => {
-        if (Array.isArray(val)) {
-          return replaceHoles(val);
-        } else if (val === undefined) {
-          return null;
-        } else {
-          return val;
+      for (let i = 0; i < arr.length; i++) {
+        if (Array.isArray(arr[i])) {
+          replaceHoles(arr[i]);
+        } else if (!(i in arr)) {
+          arr.splice(i, 1);
+          i--; // Adjust the index after removal
         }
-      });
+      }
+      return arr;
     };
 
     // Handle undefined and null values
@@ -496,7 +496,8 @@ self.onmessage = (e) => {
     // Generate table
     const header = () => {
       let HeaderArgs = [...args];
-      // let HeaderArgs = [...replaceHoles(args)];
+      originalConsole.log("HeaderArgs", HeaderArgs);
+      // handle undefined and null values in consolelog
 
       if (is1DArray(HeaderArgs)) return ["Value"];
       else if (is2DArray(HeaderArgs)) {
@@ -504,17 +505,55 @@ self.onmessage = (e) => {
         let transHeader = Array.from({ length: maxLength }, (_, i) => i);
         return transHeader;
       } else if (isNestedArray(HeaderArgs)) {
-        // let maxLength = Math.max(
-        //   ...HeaderArgs.map((arr) => (Array.isArray(arr) ? arr.length : 0))
-        // );
+        let removal = [];
+        let NumArrCount = 0;
         let maxLength = Math.max(
           ...HeaderArgs.map((arr) => (Array.isArray(arr) ? arr.length : 0))
         );
+        const CountHolesInHeader = (arr) => {
+          let holeCount = 0;
+          for (let i = 0; i < arr.length; i++) {
+            if (Array.isArray(arr[i])) {
+              holeCount += CountHolesInHeader(arr[i]);
+            } else if (!(i in arr)) {
+              // removal.push(i);
+              holeCount++;
+            }
+          }
+          return holeCount;
+        };
+        NumArrCount = CountHolesInHeader(HeaderArgs);
+        const countArraysInHeader = (arr) => {
+          return arr.reduce((count, val) => {
+            if (Array.isArray(val)) {
+              return count + 1;
+            }
+            return count;
+          }, 0);
+        };
 
-        let transHeader = Array.from({ length: maxLength }, (_, i) => i);
+        const validateAndRemove = (headerArr, numArrCount) => {
+          headerArr.forEach((arr, index) => {
+            if (Array.isArray(arr)) {
+              const arrayCount = countArraysInHeader(arr);
+              if (arrayCount === numArrCount) {
+                removal.push(index);
+              }
+            }
+          });
+        };
+
+        validateAndRemove(HeaderArgs, NumArrCount);
+
+        // HeaderArgs = FindHolesInHeader(HeaderArgs);
+        let transHeader = Array.from({ length: maxLength }, (_, i) => i).filter(
+          (val) => !removal.includes(val)
+        );
+
         return [...transHeader, "Values"];
       }
     };
+
     const rows = () => {
       if (is1DArray(args)) {
         let transRow = args.map((val, i) => [i, val]);
@@ -524,7 +563,6 @@ self.onmessage = (e) => {
         let transRow = args.map((arr, i) => [i, ...arr]);
         return transRow;
       } else if (isNestedArray(args)) {
-        originalConsole.log(args);
         let maxLength = Math.max(
           ...args
             .map((arr) => (Array.isArray(arr) ? arr.length : 0))
@@ -536,6 +574,14 @@ self.onmessage = (e) => {
 
         transRow = transRow.map((arr, i) => {
           if (Array.isArray(arr)) {
+            for (let i = 0; i < arr.length; i++) {
+              if (Array.isArray(arr[i])) {
+                replaceHoles(arr[i]);
+              } else if (!(i in arr)) {
+                arr.splice(i, 1);
+                i--; // Adjust the index after removal
+              }
+            }
             return [i, ...arr, null];
           } else {
             return [i, ...generateSpaces(maxLength), arr];
@@ -543,7 +589,7 @@ self.onmessage = (e) => {
         });
 
         // handling arrays holes
-        transRow = [...replaceHoles(transRow)];
+        // transRow = [...replaceHoles(transRow)];
         return transRow;
       }
     };
@@ -570,6 +616,5 @@ self.onmessage = (e) => {
   restoreConsole();
 
   // Set output log
-  originalConsole.log(outputLog);
   self.postMessage(outputLog);
 };
