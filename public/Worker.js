@@ -472,7 +472,7 @@ self.onmessage = (e) => {
           replaceHoles(arr[i]);
         } else if (!(i in arr)) {
           arr.splice(i, 1);
-          i--; // Adjust the index after removal
+          i--; // Adjust the index after holes
         }
       }
       return arr;
@@ -495,60 +495,37 @@ self.onmessage = (e) => {
 
     // Generate table
     const header = () => {
-      let HeaderArgs = [...args];
-      originalConsole.log("HeaderArgs", HeaderArgs);
+      function ProperArrCopy(arr) {
+        if (!Array.isArray(arr)) return arr;
+        let copy = new Array(arr.length);
+        for (let i = 0; i < arr.length; i++) {
+          if (i in arr) {
+            copy[i] = ProperArrCopy(arr[i]);
+          }
+        }
+        return copy;
+      }
+      let HeaderArgs = ProperArrCopy(args);
+      // originalConsole.log(HeaderArgs);
+      originalConsole.log(is1DArray(HeaderArgs));
+      originalConsole.log(is2DArray(HeaderArgs));
       // handle undefined and null values in consolelog
-
+      // holes and undefined and sets and str in log
       if (is1DArray(HeaderArgs)) return ["Value"];
       else if (is2DArray(HeaderArgs)) {
         let maxLength = Math.max(...HeaderArgs.map((arr) => arr.length));
         let transHeader = Array.from({ length: maxLength }, (_, i) => i);
         return transHeader;
       } else if (isNestedArray(HeaderArgs)) {
-        let removal = [];
-        let NumArrCount = 0;
+        originalConsole.log(true)
         let maxLength = Math.max(
-          ...HeaderArgs.map((arr) => (Array.isArray(arr) ? arr.length : 0))
+          ...HeaderArgs.map((arr) =>
+            Array.isArray(arr) ? arr.length : 0
+          ).filter((length) => !isNaN(length))
         );
-        const CountHolesInHeader = (arr) => {
-          let holeCount = 0;
-          for (let i = 0; i < arr.length; i++) {
-            if (Array.isArray(arr[i])) {
-              holeCount += CountHolesInHeader(arr[i]);
-            } else if (!(i in arr)) {
-              // removal.push(i);
-              holeCount++;
-            }
-          }
-          return holeCount;
-        };
-        NumArrCount = CountHolesInHeader(HeaderArgs);
-        const countArraysInHeader = (arr) => {
-          return arr.reduce((count, val) => {
-            if (Array.isArray(val)) {
-              return count + 1;
-            }
-            return count;
-          }, 0);
-        };
-
-        const validateAndRemove = (headerArr, numArrCount) => {
-          headerArr.forEach((arr, index) => {
-            if (Array.isArray(arr)) {
-              const arrayCount = countArraysInHeader(arr);
-              if (arrayCount === numArrCount) {
-                removal.push(index);
-              }
-            }
-          });
-        };
-
-        validateAndRemove(HeaderArgs, NumArrCount);
-
+        console.log(maxLength);
         // HeaderArgs = FindHolesInHeader(HeaderArgs);
-        let transHeader = Array.from({ length: maxLength }, (_, i) => i).filter(
-          (val) => !removal.includes(val)
-        );
+        let transHeader = Array.from({ length: maxLength }, (_, i) => i);
 
         return [...transHeader, "Values"];
       }
@@ -579,7 +556,7 @@ self.onmessage = (e) => {
                 replaceHoles(arr[i]);
               } else if (!(i in arr)) {
                 arr.splice(i, 1);
-                i--; // Adjust the index after removal
+                i--; // Adjust the index after holes
               }
             }
             return [i, ...arr, null];
@@ -593,6 +570,7 @@ self.onmessage = (e) => {
         return transRow;
       }
     };
+
     let table = {
       headers: header(),
       rows: rows(),
