@@ -506,26 +506,70 @@ self.onmessage = (e) => {
         return copy;
       }
       let HeaderArgs = ProperArrCopy(args);
-      // originalConsole.log(HeaderArgs);
-      originalConsole.log(is1DArray(HeaderArgs));
-      originalConsole.log(is2DArray(HeaderArgs));
       // handle undefined and null values in consolelog
       // holes and undefined and sets and str in log
       if (is1DArray(HeaderArgs)) return ["Value"];
       else if (is2DArray(HeaderArgs)) {
-        let maxLength = Math.max(...HeaderArgs.map((arr) => arr.length));
+        let maxLength = Math.max(
+          ...HeaderArgs.map((arr) => arr.length).filter(
+            (length) => !isNaN(length)
+          )
+        );
         let transHeader = Array.from({ length: maxLength }, (_, i) => i);
         return transHeader;
       } else if (isNestedArray(HeaderArgs)) {
-        originalConsole.log(true)
         let maxLength = Math.max(
           ...HeaderArgs.map((arr) =>
             Array.isArray(arr) ? arr.length : 0
           ).filter((length) => !isNaN(length))
         );
-        console.log(maxLength);
-        // HeaderArgs = FindHolesInHeader(HeaderArgs);
-        let transHeader = Array.from({ length: maxLength }, (_, i) => i);
+        // Counting the number of arrays in the header
+        let OnlyArr = HeaderArgs.filter((arr) => Array.isArray(arr));
+        let NumArr = OnlyArr.length;
+
+        // finding the index of the holes in the header
+        let holes = [];
+        function findHoles(arr) {
+          for (let i = 0; i < arr.length; i++) {
+            if (Array.isArray(arr[i])) {
+              findHoles(arr[i]);
+            } else if (!(i in arr)) {
+              holes.push(i);
+            }
+          }
+          return holes;
+        }
+
+        findHoles(OnlyArr);
+
+        // sorting holes array
+        holes.sort((a, b) => a - b);
+
+        // finding the number of index of the arrays in the header
+        let elementIndexCount = {};
+        let index;
+        for (let i = 0; i < holes.length; i++) {
+          index = holes[i];
+          if (elementIndexCount[index]) {
+            elementIndexCount[index]++;
+          } else {
+            elementIndexCount[index] = 1;
+          }
+        }
+        console.log("elementIndexCount", elementIndexCount);
+
+        let removal = [];
+        for (const key in elementIndexCount) {
+          console.log("key", key);
+          if (NumArr == elementIndexCount[key]) {
+            removal.push(parseInt(key));
+          }
+        }
+        console.log("removal", removal);
+
+        let transHeader = Array.from({ length: maxLength }, (_, i) => i).filter(
+          (val) => !removal.includes(val)
+        );
 
         return [...transHeader, "Values"];
       }
