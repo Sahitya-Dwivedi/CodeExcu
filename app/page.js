@@ -8,9 +8,16 @@ const Home = () => {
   const [code, setCode] = useState("");
   const [run, setRun] = useState(false);
   useEffect(() => {
-    alert("The making is in progress. current functioning can be incomplete also");
+    alert(
+      "The making is in progress. current functioning can be incomplete also"
+    );
+    document.addEventListener("keypress", (e) => {
+      if (e.key === "ṇ") {
+        setRun(true);
+      }
+    });
   }, []);
-
+  
   return (
     <div className="flex flex-col justify-end items-end bg-gradient-to-r from-[#0000ff] to-[#ee005f]  h-screen">
       <Navbar letRun={setRun} />
