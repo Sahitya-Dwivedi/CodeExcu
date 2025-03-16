@@ -8,6 +8,15 @@ const Excutor = ({ toRun, ChangeRun }) => {
   const [value, setValue] = useState([]);
   const [showOption, setShowOption] = useState(false);
 
+  useEffect(() => {
+    document.addEventListener("keypress", (e) => {
+      if (e.key === "ḍ") {
+        setValue([]);
+      }
+    });
+  }, []);
+  
+
   const handleEval = useCallback(() => {
     let outputLog = [];
     let worker = new Worker(new URL("../public/Worker.js", import.meta.url));
