@@ -460,8 +460,8 @@ self.onmessage = (e) => {
     }
 
     // generating extra spaces for table
-    const generateSpaces = (maxLength) => {
-      let spaces = header().length - 1;
+    const generateSpaces = (length=1) => {
+      let spaces = header().length - length;
       return Array(spaces).fill(null);
     };
 
@@ -477,7 +477,7 @@ self.onmessage = (e) => {
         if (Array.isArray(arr[i])) {
           replaceHoles(arr[i]);
         } else if (!(i in arr)) {
-          replaceHoles(arr[i])
+          replaceHoles(arr[i]);
         }
       }
       return arr;
@@ -520,7 +520,50 @@ self.onmessage = (e) => {
             (length) => !isNaN(length)
           )
         );
-        let transHeader = Array.from({ length: maxLength }, (_, i) => i);
+
+        // Counting the number of arrays in the header
+        let OnlyArr = HeaderArgs.filter((arr) => Array.isArray(arr));
+        let NumArr = OnlyArr.length;
+
+        // finding the index of the holes in the header
+        let holes = [];
+        function findHoles(arr) {
+          for (let i = 0; i < arr.length; i++) {
+            if (Array.isArray(arr[i])) {
+              findHoles(arr[i]);
+            } else if (!(i in arr)) {
+              holes.push(i);
+            }
+          }
+          return holes;
+        }
+
+        findHoles(OnlyArr);
+
+        // sorting holes array
+        holes.sort((a, b) => a - b);
+
+        // finding the number of index of the arrays in the header
+        let elementIndexCount = {};
+        let index;
+        for (let i = 0; i < holes.length; i++) {
+          index = holes[i];
+          if (elementIndexCount[index]) {
+            elementIndexCount[index]++;
+          } else {
+            elementIndexCount[index] = 1;
+          }
+        }
+        let removal = [];
+        for (const key in elementIndexCount) {
+          if (NumArr == elementIndexCount[key]) {
+            removal.push(parseInt(key));
+          }
+        }
+
+        let transHeader = Array.from({ length: maxLength }, (_, i) => i).filter(
+          (val) => !removal.includes(val)
+        );
         return transHeader;
       } else if (isNestedArray(HeaderArgs)) {
         let maxLength = Math.max(
@@ -578,10 +621,72 @@ self.onmessage = (e) => {
     const rows = () => {
       if (is1DArray(args)) {
         let transRow = args.map((val, i) => [i, val]);
+        transRow = InDepthStringification(transRow);
+        transRow = handleUndefinedAndNull(transRow);
         return transRow;
       } else if (is2DArray(args)) {
+        let maxLength = Math.max(
+          ...args.map((arr) => arr.length).filter((length) => !isNaN(length))
+        );
         args = InDepthStringification(args);
-        let transRow = args.map((arr, i) => [i, ...arr]);
+        args = handleUndefinedAndNull(args);
+
+        let OnlyArr = args.filter((arr) => Array.isArray(arr));
+        let NumArr = OnlyArr.length;
+
+        // finding the index of the holes in the header
+        let holes = [];
+        function findHoles(arr) {
+          for (let i = 0; i < arr.length; i++) {
+            if (Array.isArray(arr[i])) {
+              findHoles(arr[i]);
+            } else if (!(i in arr)) {
+              holes.push(i);
+            }
+          }
+          return holes;
+        }
+
+        findHoles(OnlyArr);
+
+        // sorting holes array
+        holes.sort((a, b) => a - b);
+
+        // finding the number of index of the arrays in the header
+        let elementIndexCount = {};
+        let index;
+        for (let i = 0; i < holes.length; i++) {
+          index = holes[i];
+          if (elementIndexCount[index]) {
+            elementIndexCount[index]++;
+          } else {
+            elementIndexCount[index] = 1;
+          }
+        }
+        let removal = [];
+        for (const key in elementIndexCount) {
+          if (NumArr == elementIndexCount[key]) {
+            removal.push(parseInt(key));
+          }
+        }
+
+        let transRow = args.map((arr, i) => {
+          if (Array.isArray(arr)) {
+            for (let i = 0; i < arr.length; i++) {
+              if (Array.isArray(arr[i])) {
+                replaceHoles(arr[i]);
+              } else if (!(i in arr)) {
+                arr[i] = null;
+              }
+            }
+            arr = arr.filter((_, i) => !removal.includes(i));
+
+            return [i, ...arr, ...generateSpaces(arr.length)];
+          } else {
+            return [i, ...generateSpaces(), arr];
+          }
+        });
+
         return transRow;
       } else if (isNestedArray(args)) {
         let maxLength = Math.max(
@@ -637,19 +742,18 @@ self.onmessage = (e) => {
             for (let i = 0; i < arr.length; i++) {
               if (Array.isArray(arr[i])) {
                 replaceHoles(arr[i]);
-              } else if(!(i in arr)) {
-                arr.splice(i, 1);
-                i--
+              } else if (!(i in arr)) {
+                arr[i] = null;
               }
             }
-            return [i, ...arr, null];
+            arr = arr.filter((_, i) => !removal.includes(i));
+
+            return [i, ...arr, ...generateSpaces(arr.length)];
           } else {
-            return [i, ...generateSpaces(maxLength), arr];
+            return [i, ...generateSpaces(), arr];
           }
         });
 
-        // handling arrays holes
-        // transRow = [...replaceHoles(transRow)];
         return transRow;
       }
     };
