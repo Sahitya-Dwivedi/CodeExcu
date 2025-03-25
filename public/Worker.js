@@ -461,18 +461,23 @@ self.onmessage = (e) => {
 
     // generating extra spaces for table
     const generateSpaces = (maxLength) => {
-      let spaces = maxLength;
+      let spaces = header().length - 1;
       return Array(spaces).fill(null);
     };
 
     // Replace holes with null
+    /**
+     * Recursively replaces holes (undefined elements) in an array with the next elements.
+     *
+     * @param {Array} arr - The array to process, which may contain nested arrays.
+     * @returns {Array} The processed array with holes removed.
+     */
     const replaceHoles = (arr) => {
       for (let i = 0; i < arr.length; i++) {
         if (Array.isArray(arr[i])) {
           replaceHoles(arr[i]);
         } else if (!(i in arr)) {
-          arr.splice(i, 1);
-          i--; // Adjust the index after holes
+          replaceHoles(arr[i])
         }
       }
       return arr;
@@ -556,17 +561,12 @@ self.onmessage = (e) => {
             elementIndexCount[index] = 1;
           }
         }
-        console.log("elementIndexCount", elementIndexCount);
-
         let removal = [];
         for (const key in elementIndexCount) {
-          console.log("key", key);
           if (NumArr == elementIndexCount[key]) {
             removal.push(parseInt(key));
           }
         }
-        console.log("removal", removal);
-
         let transHeader = Array.from({ length: maxLength }, (_, i) => i).filter(
           (val) => !removal.includes(val)
         );
@@ -593,14 +593,53 @@ self.onmessage = (e) => {
         transRow = InDepthStringification(transRow);
         transRow = handleUndefinedAndNull(transRow);
 
+        let OnlyArr = transRow.filter((arr) => Array.isArray(arr));
+        let NumArr = OnlyArr.length;
+
+        // finding the index of the holes in the header
+        let holes = [];
+        function findHoles(arr) {
+          for (let i = 0; i < arr.length; i++) {
+            if (Array.isArray(arr[i])) {
+              findHoles(arr[i]);
+            } else if (!(i in arr)) {
+              holes.push(i);
+            }
+          }
+          return holes;
+        }
+
+        findHoles(OnlyArr);
+
+        // sorting holes array
+        holes.sort((a, b) => a - b);
+
+        // finding the number of index of the arrays in the header
+        let elementIndexCount = {};
+        let index;
+        for (let i = 0; i < holes.length; i++) {
+          index = holes[i];
+          if (elementIndexCount[index]) {
+            elementIndexCount[index]++;
+          } else {
+            elementIndexCount[index] = 1;
+          }
+        }
+        let removal = [];
+        for (const key in elementIndexCount) {
+          if (NumArr == elementIndexCount[key]) {
+            removal.push(parseInt(key));
+          }
+        }
+
         transRow = transRow.map((arr, i) => {
           if (Array.isArray(arr)) {
             for (let i = 0; i < arr.length; i++) {
               if (Array.isArray(arr[i])) {
                 replaceHoles(arr[i]);
-              } else if (!(i in arr)) {
+              } else if(!(i in arr)) {
                 arr.splice(i, 1);
-                i--; // Adjust the index after holes
+                i--
               }
             }
             return [i, ...arr, null];
