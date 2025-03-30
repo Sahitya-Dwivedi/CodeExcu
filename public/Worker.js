@@ -432,6 +432,8 @@ self.onmessage = (e) => {
   // Handle console.table
   const handleTable = (args) => {
     originalConsole.table(args);
+    let headerCache = null; // Cache for header results
+
     // Check if the array is 1D, 2D or nested
     const is1DArray = (arr) =>
       Array.isArray(arr) && arr.every((val) => !Array.isArray(val));
@@ -460,7 +462,7 @@ self.onmessage = (e) => {
     }
 
     // generating extra spaces for table
-    const generateSpaces = (length=1) => {
+    const generateSpaces = (length = 1) => {
       let spaces = header().length - length;
       return Array(spaces).fill(null);
     };
@@ -499,7 +501,13 @@ self.onmessage = (e) => {
     };
 
     // Generate table
+
     const header = () => {
+      // Return cached result if available
+      if (headerCache !== null) {
+        return headerCache;
+      }
+
       function ProperArrCopy(arr) {
         if (!Array.isArray(arr)) return arr;
         let copy = new Array(arr.length);
@@ -510,10 +518,14 @@ self.onmessage = (e) => {
         }
         return copy;
       }
+
       let HeaderArgs = ProperArrCopy(args);
+      
       // handle undefined and null values in consolelog
       // holes and undefined and sets and str in log
-      if (is1DArray(HeaderArgs)) return ["Value"];
+      if (is1DArray(HeaderArgs)) {
+        headerCache = ["Value"];
+      } 
       else if (is2DArray(HeaderArgs)) {
         let maxLength = Math.max(
           ...HeaderArgs.map((arr) => arr.length).filter(
@@ -561,11 +573,11 @@ self.onmessage = (e) => {
           }
         }
 
-        let transHeader = Array.from({ length: maxLength }, (_, i) => i).filter(
+        headerCache = Array.from({ length: maxLength }, (_, i) => i).filter(
           (val) => !removal.includes(val)
         );
-        return transHeader;
-      } else if (isNestedArray(HeaderArgs)) {
+      } 
+      else if (isNestedArray(HeaderArgs)) {
         let maxLength = Math.max(
           ...HeaderArgs.map((arr) =>
             Array.isArray(arr) ? arr.length : 0
@@ -610,12 +622,15 @@ self.onmessage = (e) => {
             removal.push(parseInt(key));
           }
         }
+        
         let transHeader = Array.from({ length: maxLength }, (_, i) => i).filter(
           (val) => !removal.includes(val)
         );
 
-        return [...transHeader, "Values"];
+        headerCache = [...transHeader, "Values"];
       }
+
+      return headerCache;
     };
 
     const rows = () => {
@@ -762,6 +777,7 @@ self.onmessage = (e) => {
       headers: header(),
       rows: rows(),
     };
+    headerCache = null; // Reset cache after table is generated
     return outputLog.push(table);
   };
 
