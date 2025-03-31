@@ -451,6 +451,10 @@ self.onmessage = (e) => {
               return JSON.stringify(subVal);
             } else if (typeof subVal === "string") {
               return `'${subVal}'`;
+            } else if (Number.isNaN(subVal)) {
+              return "NaN";
+            } else if (typeof subVal === "boolean") {
+              return subVal ? "true" : "false";
             } else {
               return subVal;
             }
@@ -520,13 +524,12 @@ self.onmessage = (e) => {
       }
 
       let HeaderArgs = ProperArrCopy(args);
-      
+
       // handle undefined and null values in consolelog
       // holes and undefined and sets and str in log
       if (is1DArray(HeaderArgs)) {
         headerCache = ["Value"];
-      } 
-      else if (is2DArray(HeaderArgs)) {
+      } else if (is2DArray(HeaderArgs)) {
         let maxLength = Math.max(
           ...HeaderArgs.map((arr) => arr.length).filter(
             (length) => !isNaN(length)
@@ -576,8 +579,7 @@ self.onmessage = (e) => {
         headerCache = Array.from({ length: maxLength }, (_, i) => i).filter(
           (val) => !removal.includes(val)
         );
-      } 
-      else if (isNestedArray(HeaderArgs)) {
+      } else if (isNestedArray(HeaderArgs)) {
         let maxLength = Math.max(
           ...HeaderArgs.map((arr) =>
             Array.isArray(arr) ? arr.length : 0
@@ -622,7 +624,7 @@ self.onmessage = (e) => {
             removal.push(parseInt(key));
           }
         }
-        
+
         let transHeader = Array.from({ length: maxLength }, (_, i) => i).filter(
           (val) => !removal.includes(val)
         );
