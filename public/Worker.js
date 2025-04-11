@@ -369,18 +369,23 @@ self.onmessage = (e) => {
       originalConsole.table(args);
 
       if (!Array.isArray(args)) {
-        outputLog.push(handleLog(args))
-        return ;
+        outputLog.push(handleLog(args));
+        return;
       }
       let headerCache = null; // Cache for header results
 
       // Check if the array is 1D, 2D or nested
       const is1DArray = (arr) =>
-        Array.isArray(arr) && arr.every((val) => !Array.isArray(val));
+        Array.isArray(arr) &&
+        arr.every((val) => !Array.isArray(val) && typeof val !== "object");
       const is2DArray = (arr) =>
         Array.isArray(arr) && arr.every((val) => Array.isArray(val));
       const isNestedArray = (arr) =>
         Array.isArray(arr) && arr.some((val) => Array.isArray(val));
+
+      // check if the array contain objects
+      const isObjectArray = (arr) =>
+        Array.isArray(arr) && arr.every((val) => typeof val === "object");
 
       // Stringify arrays
       function InDepthStringification(arr) {
@@ -571,6 +576,15 @@ self.onmessage = (e) => {
           ).filter((val) => !removal.includes(val));
 
           headerCache = [...transHeader, "Values"];
+        } else if (isObjectArray(HeaderArgs)) {
+          // Get unique keys from all objects in the array
+          const keysSet = new Set();
+          HeaderArgs.forEach((obj) => {
+            if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+              Object.keys(obj).forEach((key) => keysSet.add(key));
+            }
+          });
+          headerCache = Array.from(keysSet);
         }
 
         return headerCache;
@@ -712,6 +726,22 @@ self.onmessage = (e) => {
             }
           });
 
+          return transRow;
+        } else if (isObjectArray(args)) {
+          let transRow = args
+          transRow = InDepthStringification(transRow);
+          transRow = handleUndefinedAndNull(transRow);
+          transRow = args.map((obj, i) => {
+            if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+              return [
+                i,
+                ...Object.values(obj),
+                ...generateSpaces(Object.values(obj).length),
+              ];
+            } else {
+              return [i, obj];
+            }
+          });
           return transRow;
         }
       };
