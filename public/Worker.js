@@ -449,6 +449,13 @@ self.onmessage = (e) => {
         });
       };
 
+      // handle Objects stringification
+      const ObjStringification = (obj) => {
+        let key = Object.keys(obj)
+        let val = Object.values(obj)
+        return `${key}: '${val}'`
+      }
+
       // Generate table
 
       const header = () => {
@@ -728,20 +735,25 @@ self.onmessage = (e) => {
 
           return transRow;
         } else if (isObjectArray(args)) {
-          let transRow = args
-          transRow = InDepthStringification(transRow);
+          let transRow = args;
           transRow = handleUndefinedAndNull(transRow);
           transRow = args.map((obj, i) => {
-            if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-              return [
-                i,
-                ...Object.values(obj),
-                ...generateSpaces(Object.values(obj).length),
-              ];
-            } else {
-              return [i, obj];
-            }
+            let objHeader = header(obj);
+            const row = [];
+            objHeader.forEach((key) => {
+              if (key in obj) {
+                row.push(
+                  typeof obj[key] === "object" && !Array.isArray(obj[key])
+                    ? ObjStringification(obj[key])
+                    : obj[key]
+                );
+              } else {
+                row.push(undefined);
+              }
+            });
+            return [i, ...row, ...generateSpaces(row.length)];
           });
+          transRow = InDepthStringification(transRow);
           return transRow;
         }
       };
@@ -824,6 +836,7 @@ self.onmessage = (e) => {
       eval(e.data);
     } catch (error) {
       originalConsole.error(error);
+      originalConsole.trace(error);
       outputLog.push(`${error}`);
     }
   };
