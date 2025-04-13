@@ -451,10 +451,18 @@ self.onmessage = (e) => {
 
       // handle Objects stringification
       const ObjStringification = (obj) => {
-        let key = Object.keys(obj)
-        let val = Object.values(obj)
-        return `${key}: '${val}'`
-      }
+        let key = Object.keys(obj);
+        let val = Object.values(obj);
+        if (key.length > 1) {
+          return `{${key.map((k, i) => `${k}: ${val[i]}`).join(", ")}}`;
+        } else if (key.length == 0) {
+          return "{}";
+        } else if (key.length == 1) {
+          return `${key}: ${val}`;
+        }else{
+          return `${key}: ${val}`;
+        }
+      };
 
       // Generate table
 
@@ -742,18 +750,27 @@ self.onmessage = (e) => {
             const row = [];
             objHeader.forEach((key) => {
               if (key in obj) {
-                row.push(
-                  typeof obj[key] === "object" && !Array.isArray(obj[key])
-                    ? ObjStringification(obj[key])
-                    : obj[key]
-                );
+                let result;
+                if (typeof obj[key] === "object" && !Array.isArray(obj[key])) {
+                  result = ObjStringification(obj[key]);
+                } else if (Array.isArray(obj[key])) {
+                  result = JSON.stringify(obj[key]);
+                } else if (typeof obj[key] === "string") {
+                  result = `'${obj[key]}'`;
+                } else if (Number.isNaN(obj[key])) {
+                  result = "NaN";
+                } else if (typeof obj[key] === "boolean") {
+                  result = obj[key] ? "true" : "false";
+                } else {
+                  result = obj[key];
+                }
+                row.push(result);
               } else {
                 row.push(undefined);
               }
             });
             return [i, ...row, ...generateSpaces(row.length)];
           });
-          transRow = InDepthStringification(transRow);
           return transRow;
         }
       };
