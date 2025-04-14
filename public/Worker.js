@@ -454,12 +454,18 @@ self.onmessage = (e) => {
         let key = Object.keys(obj);
         let val = Object.values(obj);
         if (key.length > 1) {
-          return `{${key.map((k, i) => `${k}: ${val[i]}`).join(", ")}}`;
+          originalConsole.log(key, val);
+          return `{${key
+            .map(
+              (k, i) =>
+                `${k}: ${typeof val[i] == "object" ? "[Object]" : val[i]}`
+            )
+            .join(", ")}}`;
         } else if (key.length == 0) {
           return "{}";
         } else if (key.length == 1) {
-          return `${key}: ${val}`;
-        }else{
+          return `${key}: ${typeof val == "object" ? "[Object]" : val}`;
+        } else {
           return `${key}: ${val}`;
         }
       };
