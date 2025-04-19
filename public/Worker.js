@@ -405,7 +405,17 @@ self.onmessage = (e) => {
               }
             });
           } else {
-            return val;
+            if (Array.isArray(val)) {
+              return JSON.stringify(val);
+            } else if (typeof val === "string") {
+              return `'${val}'`;
+            } else if (Number.isNaN(val)) {
+              return "NaN";
+            } else if (typeof val === "boolean") {
+              return val ? "true" : "false";
+            } else {
+              return val;
+            }
           }
         });
       }
@@ -760,7 +770,7 @@ self.onmessage = (e) => {
                 if (typeof obj[key] === "object" && !Array.isArray(obj[key])) {
                   result = ObjStringification(obj[key]);
                 } else if (Array.isArray(obj[key])) {
-                  result = JSON.stringify(obj[key]);
+                  result = `[${InDepthStringification(obj[key])}]`;
                 } else if (typeof obj[key] === "string") {
                   result = `'${obj[key]}'`;
                 } else if (Number.isNaN(obj[key])) {
