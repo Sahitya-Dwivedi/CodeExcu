@@ -464,7 +464,6 @@ self.onmessage = (e) => {
         let key = Object.keys(obj);
         let val = Object.values(obj);
         if (key.length > 1) {
-          originalConsole.log(key, val);
           return `{${key
             .map(
               (k, i) =>
@@ -767,8 +766,16 @@ self.onmessage = (e) => {
             objHeader.forEach((key) => {
               if (key in obj) {
                 let result;
-                if (typeof obj[key] === "object" && !Array.isArray(obj[key])) {
-                  result = ObjStringification(obj[key]);
+                if (
+                  typeof obj[key] === "object" &&
+                  !Array.isArray(obj[key]) &&
+                  obj[key] !== null
+                ) {
+                  originalConsole.log(obj[key]);
+                  result =
+                    obj[key] instanceof Date
+                      ? obj[key].toString()
+                      : ObjStringification(obj[key]);
                 } else if (Array.isArray(obj[key])) {
                   result = `[${InDepthStringification(obj[key])}]`;
                 } else if (typeof obj[key] === "string") {
@@ -777,6 +784,10 @@ self.onmessage = (e) => {
                   result = "NaN";
                 } else if (typeof obj[key] === "boolean") {
                   result = obj[key] ? "true" : "false";
+                } else if (obj[key] === null) {
+                  result = "null";
+                } else if (typeof obj[key] === "undefined") {
+                  result = "undefined";
                 } else {
                   result = obj[key];
                 }
