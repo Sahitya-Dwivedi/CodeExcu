@@ -68,7 +68,9 @@ self.onmessage = (e) => {
           } else if (subargs === null) {
             return "null";
           } else if (typeof subargs === "object") {
-            return `{${formatObject(subargs)}}`;
+            return subargs instanceof Date
+              ? subargs.toString()
+              : `{${formatObject(subargs)}}`;
           } else if (typeof subargs === "undefined") return "undefined";
           else if (typeof subargs === "symbol") return subargs.toString();
           else return subargs;
