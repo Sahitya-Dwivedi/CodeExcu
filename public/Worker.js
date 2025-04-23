@@ -498,6 +498,21 @@ self.onmessage = (e) => {
           return copy;
         }
 
+        // Get unique keys from all objects in the array
+        /**
+         * Gets all unique keys from an array of objects
+         * @param {Array} objArray - Array of objects to extract keys from
+         * @returns {Array} - Array of unique keys
+         */
+        function getUniqueObjectKeys(objArray) {
+          const keysSet = new Set();
+          objArray.forEach((obj) => {
+            if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+              Object.keys(obj).forEach((key) => keysSet.add(key));
+            }
+          });
+          return Array.from(keysSet);
+        }
         let HeaderArgs = ProperArrCopy(args);
 
         // handle undefined and null values in consolelog
@@ -607,14 +622,7 @@ self.onmessage = (e) => {
 
           headerCache = [...transHeader, "Values"];
         } else if (isObjectArray(HeaderArgs)) {
-          // Get unique keys from all objects in the array
-          const keysSet = new Set();
-          HeaderArgs.forEach((obj) => {
-            if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-              Object.keys(obj).forEach((key) => keysSet.add(key));
-            }
-          });
-          headerCache = Array.from(keysSet);
+          headerCache = getUniqueObjectKeys(HeaderArgs);
         }
 
         return headerCache;
@@ -771,7 +779,6 @@ self.onmessage = (e) => {
                   !Array.isArray(obj[key]) &&
                   obj[key] !== null
                 ) {
-                  originalConsole.log(obj[key]);
                   result =
                     obj[key] instanceof Date
                       ? obj[key].toString()
@@ -788,6 +795,8 @@ self.onmessage = (e) => {
                   result = "null";
                 } else if (typeof obj[key] === "undefined") {
                   result = "undefined";
+                } else if (typeof obj[key] === "function") {
+                  result = `${`[Function: ${key}]`}`;
                 } else {
                   result = obj[key];
                 }
@@ -799,6 +808,8 @@ self.onmessage = (e) => {
             return [i, ...row, ...generateSpaces(row.length)];
           });
           return transRow;
+        } else {
+          originalConsole.log("Table: Unsupported data type.");
         }
       };
 
@@ -889,7 +900,6 @@ self.onmessage = (e) => {
   overwriteConsole();
   evaluateCode();
   restoreConsole();
-
   // Set output log
   self.postMessage(outputLog);
 };
