@@ -386,6 +386,9 @@ self.onmessage = (e) => {
       // check if the array contain objects
       const isObjectArray = (arr) =>
         Array.isArray(arr) && arr.every((val) => typeof val === "object");
+      const isObjectNestedArray = (arr) =>
+        Array.isArray(arr) &&
+        arr.some((val) => typeof val === "object" && !Array.isArray(val));
 
       // Stringify arrays
       function InDepthStringification(arr) {
@@ -505,9 +508,11 @@ self.onmessage = (e) => {
          * @returns {Array} - Array of unique keys
          */
         function getUniqueObjectKeys(objArray) {
+          //  [Array(2), {…}, 'Just a string', 42, {…}, null, undefined]
           const keysSet = new Set();
           objArray.forEach((obj) => {
             if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+              originalConsole.log(obj);
               Object.keys(obj).forEach((key) => keysSet.add(key));
             }
           });
@@ -569,6 +574,66 @@ self.onmessage = (e) => {
           headerCache = Array.from({ length: maxLength }, (_, i) => i).filter(
             (val) => !removal.includes(val)
           );
+        } else if (isObjectArray(HeaderArgs)) {
+          headerCache = getUniqueObjectKeys(HeaderArgs);
+          originalConsole.log(headerCache);
+        } else if (isObjectNestedArray(HeaderArgs)) {
+          let maxLength = Math.max(
+            ...HeaderArgs.map((arr) =>
+              Array.isArray(arr) ? arr.length : 0
+            ).filter((length) => !isNaN(length))
+          );
+          // Counting the number of arrays in the header
+          let OnlyArr = HeaderArgs.filter((arr) => Array.isArray(arr));
+          let NumArr = OnlyArr.length;
+
+          // finding the index of the holes in the header
+          let holes = [];
+          function findHoles(arr) {
+            for (let i = 0; i < arr.length; i++) {
+              if (Array.isArray(arr[i])) {
+                findHoles(arr[i]);
+              } else if (!(i in arr)) {
+                holes.push(i);
+              }
+            }
+            return holes;
+          }
+
+          findHoles(OnlyArr);
+
+          // sorting holes array
+          holes.sort((a, b) => a - b);
+
+          // finding the number of index of the arrays in the header
+          let elementIndexCount = {};
+          let index;
+          for (let i = 0; i < holes.length; i++) {
+            index = holes[i];
+            if (elementIndexCount[index]) {
+              elementIndexCount[index]++;
+            } else {
+              elementIndexCount[index] = 1;
+            }
+          }
+          let removal = [];
+          for (const key in elementIndexCount) {
+            if (NumArr == elementIndexCount[key]) {
+              removal.push(parseInt(key));
+            }
+          }
+
+          let transHeader = Array.from(
+            { length: maxLength },
+            (_, i) => i
+          ).filter((val) => !removal.includes(val));
+
+          headerCache = [
+            ...transHeader,
+            ...getUniqueObjectKeys(HeaderArgs),
+            "Values",
+          ];
+          originalConsole.log(headerCache);
         } else if (isNestedArray(HeaderArgs)) {
           let maxLength = Math.max(
             ...HeaderArgs.map((arr) =>
@@ -621,10 +686,15 @@ self.onmessage = (e) => {
           ).filter((val) => !removal.includes(val));
 
           headerCache = [...transHeader, "Values"];
-        } else if (isObjectArray(HeaderArgs)) {
-          headerCache = getUniqueObjectKeys(HeaderArgs);
         }
-
+        originalConsole.log("is1DArray", is1DArray(HeaderArgs));
+        originalConsole.log("is2DArray", is2DArray(HeaderArgs));
+        originalConsole.log("isNestedArray", isNestedArray(HeaderArgs));
+        originalConsole.log("isObjectArray", isObjectArray(HeaderArgs));
+        originalConsole.log(
+          "isObjectNestedArray",
+          isObjectNestedArray(HeaderArgs)
+        );
         return headerCache;
       };
 
