@@ -482,6 +482,51 @@ self.onmessage = (e) => {
         }
       };
 
+      function handleObjectArray(args) {
+        let transRow = args;
+        transRow = handleUndefinedAndNull(transRow);
+        transRow = args.map((obj, i) => {
+          let objHeader = header(obj);
+          const row = [];
+          objHeader.forEach((key) => {
+            if (key in obj) {
+              let result;
+              if (
+                typeof obj[key] === "object" &&
+                !Array.isArray(obj[key]) &&
+                obj[key] !== null
+              ) {
+                result =
+                  obj[key] instanceof Date
+                    ? obj[key].toString()
+                    : ObjStringification(obj[key]);
+              } else if (Array.isArray(obj[key])) {
+                result = `[${InDepthStringification(obj[key])}]`;
+              } else if (typeof obj[key] === "string") {
+                result = `'${obj[key]}'`;
+              } else if (Number.isNaN(obj[key])) {
+                result = "NaN";
+              } else if (typeof obj[key] === "boolean") {
+                result = obj[key] ? "true" : "false";
+              } else if (obj[key] === null) {
+                result = "null";
+              } else if (typeof obj[key] === "undefined") {
+                result = "undefined";
+              } else if (typeof obj[key] === "function") {
+                result = `${`[Function: ${key}]`}`;
+              } else {
+                result = obj[key];
+              }
+              row.push(result);
+            } else {
+              row.push(undefined);
+            }
+          });
+          return [i, ...row, ...generateSpaces(row.length)];
+        });
+        return transRow;
+      }
+
       // Generate table
 
       const header = () => {
@@ -512,7 +557,6 @@ self.onmessage = (e) => {
           const keysSet = new Set();
           objArray.forEach((obj) => {
             if (obj && typeof obj === "object" && !Array.isArray(obj)) {
-              originalConsole.log(obj);
               Object.keys(obj).forEach((key) => keysSet.add(key));
             }
           });
@@ -576,7 +620,6 @@ self.onmessage = (e) => {
           );
         } else if (isObjectArray(HeaderArgs)) {
           headerCache = getUniqueObjectKeys(HeaderArgs);
-          originalConsole.log(headerCache);
         } else if (isObjectNestedArray(HeaderArgs)) {
           let maxLength = Math.max(
             ...HeaderArgs.map((arr) =>
@@ -633,7 +676,6 @@ self.onmessage = (e) => {
             ...getUniqueObjectKeys(HeaderArgs),
             "Values",
           ];
-          originalConsole.log(headerCache);
         } else if (isNestedArray(HeaderArgs)) {
           let maxLength = Math.max(
             ...HeaderArgs.map((arr) =>
@@ -687,14 +729,7 @@ self.onmessage = (e) => {
 
           headerCache = [...transHeader, "Values"];
         }
-        originalConsole.log("is1DArray", is1DArray(HeaderArgs));
-        originalConsole.log("is2DArray", is2DArray(HeaderArgs));
-        originalConsole.log("isNestedArray", isNestedArray(HeaderArgs));
-        originalConsole.log("isObjectArray", isObjectArray(HeaderArgs));
-        originalConsole.log(
-          "isObjectNestedArray",
-          isObjectNestedArray(HeaderArgs)
-        );
+
         return headerCache;
       };
 
@@ -768,12 +803,11 @@ self.onmessage = (e) => {
           });
 
           return transRow;
-        } else if (isNestedArray(args)) {
-          let maxLength = Math.max(
-            ...args
-              .map((arr) => (Array.isArray(arr) ? arr.length : 0))
-              .filter((length) => !isNaN(length))
-          );
+        } else if (isObjectArray(args)) {
+          let transRow = handleObjectArray(args);
+          originalConsole.log(transRow);
+          return transRow;
+        } else if (isObjectNestedArray(args)) {
           let transRow = args;
           transRow = InDepthStringification(transRow);
           transRow = handleUndefinedAndNull(transRow);
@@ -816,7 +850,72 @@ self.onmessage = (e) => {
               removal.push(parseInt(key));
             }
           }
+          originalConsole.log(transRow);
+          transRow = transRow.map((arr, i) => {
+            if (Array.isArray(arr)) {
+              for (let i = 0; i < arr.length; i++) {
+                if (Array.isArray(arr[i])) {
+                  replaceHoles(arr[i]);
+                } else if (!(i in arr)) {
+                  arr[i] = null;
+                }
+              }
+              arr = arr.filter((_, i) => !removal.includes(i));
 
+              return [i, ...arr, ...generateSpaces(arr.length)];
+            } else if (typeof arr === "object") {
+              originalConsole.log(arr);
+              originalConsole.log(handleObjectArray([arr]));
+              return [i, ...generateSpaces(), ...handleObjectArray([arr])];
+            } else {
+              return [i, ...generateSpaces(), arr];
+            }
+          });
+
+          return transRow;
+        } else if (isNestedArray(args)) {
+          let transRow = args;
+          transRow = InDepthStringification(transRow);
+          transRow = handleUndefinedAndNull(transRow);
+
+          let OnlyArr = transRow.filter((arr) => Array.isArray(arr));
+          let NumArr = OnlyArr.length;
+
+          // finding the index of the holes in the header
+          let holes = [];
+          function findHoles(arr) {
+            for (let i = 0; i < arr.length; i++) {
+              if (Array.isArray(arr[i])) {
+                findHoles(arr[i]);
+              } else if (!(i in arr)) {
+                holes.push(i);
+              }
+            }
+            return holes;
+          }
+
+          findHoles(OnlyArr);
+
+          // sorting holes array
+          holes.sort((a, b) => a - b);
+
+          // finding the number of index of the arrays in the header
+          let elementIndexCount = {};
+          let index;
+          for (let i = 0; i < holes.length; i++) {
+            index = holes[i];
+            if (elementIndexCount[index]) {
+              elementIndexCount[index]++;
+            } else {
+              elementIndexCount[index] = 1;
+            }
+          }
+          let removal = [];
+          for (const key in elementIndexCount) {
+            if (NumArr == elementIndexCount[key]) {
+              removal.push(parseInt(key));
+            }
+          }
           transRow = transRow.map((arr, i) => {
             if (Array.isArray(arr)) {
               for (let i = 0; i < arr.length; i++) {
@@ -835,54 +934,9 @@ self.onmessage = (e) => {
           });
 
           return transRow;
-        } else if (isObjectArray(args)) {
-          let transRow = args;
-          transRow = handleUndefinedAndNull(transRow);
-          transRow = args.map((obj, i) => {
-            let objHeader = header(obj);
-            const row = [];
-            objHeader.forEach((key) => {
-              if (key in obj) {
-                let result;
-                if (
-                  typeof obj[key] === "object" &&
-                  !Array.isArray(obj[key]) &&
-                  obj[key] !== null
-                ) {
-                  result =
-                    obj[key] instanceof Date
-                      ? obj[key].toString()
-                      : ObjStringification(obj[key]);
-                } else if (Array.isArray(obj[key])) {
-                  result = `[${InDepthStringification(obj[key])}]`;
-                } else if (typeof obj[key] === "string") {
-                  result = `'${obj[key]}'`;
-                } else if (Number.isNaN(obj[key])) {
-                  result = "NaN";
-                } else if (typeof obj[key] === "boolean") {
-                  result = obj[key] ? "true" : "false";
-                } else if (obj[key] === null) {
-                  result = "null";
-                } else if (typeof obj[key] === "undefined") {
-                  result = "undefined";
-                } else if (typeof obj[key] === "function") {
-                  result = `${`[Function: ${key}]`}`;
-                } else {
-                  result = obj[key];
-                }
-                row.push(result);
-              } else {
-                row.push(undefined);
-              }
-            });
-            return [i, ...row, ...generateSpaces(row.length)];
-          });
-          return transRow;
-        } else {
-          originalConsole.log("Table: Unsupported data type.");
         }
       };
-
+      // rows();
       let table = {
         headers: header(),
         rows: rows(),
