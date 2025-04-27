@@ -482,7 +482,7 @@ self.onmessage = (e) => {
         }
       };
 
-      function handleObjectArray(args) {
+      function handleObjectArray(args, indReq = true) {
         let transRow = args;
         transRow = handleUndefinedAndNull(transRow);
         transRow = args.map((obj, i) => {
@@ -522,7 +522,9 @@ self.onmessage = (e) => {
               row.push(undefined);
             }
           });
-          return [i, ...row, ...generateSpaces(row.length)];
+          return indReq
+            ? [i, ...row, ...generateSpaces(row.length)]
+            : [...row, ...generateSpaces(row.length)];
         });
         return transRow;
       }
@@ -805,7 +807,6 @@ self.onmessage = (e) => {
           return transRow;
         } else if (isObjectArray(args)) {
           let transRow = handleObjectArray(args);
-          originalConsole.log(transRow);
           return transRow;
         } else if (isObjectNestedArray(args)) {
           let transRow = args;
@@ -850,7 +851,6 @@ self.onmessage = (e) => {
               removal.push(parseInt(key));
             }
           }
-          originalConsole.log(transRow);
           transRow = transRow.map((arr, i) => {
             if (Array.isArray(arr)) {
               for (let i = 0; i < arr.length; i++) {
@@ -864,9 +864,8 @@ self.onmessage = (e) => {
 
               return [i, ...arr, ...generateSpaces(arr.length)];
             } else if (typeof arr === "object") {
-              originalConsole.log(arr);
-              originalConsole.log(handleObjectArray([arr]));
-              return [i, ...generateSpaces(), ...handleObjectArray([arr])];
+              let objArr = handleObjectArray([arr], false).flat(1);
+              return [i, ...objArr];
             } else {
               return [i, ...generateSpaces(), arr];
             }
