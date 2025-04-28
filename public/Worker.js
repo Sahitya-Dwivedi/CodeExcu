@@ -948,8 +948,30 @@ self.onmessage = (e) => {
         headerCache = null; // Reset cache after table is generated
         return outputLog.push(table);
       } else if (typeof args === "object") {
+        isObjectNested = (args) => {
+          return Object.values(args).some((val) => typeof val === "object");
+        };
         let header = () => {
-          return ["Value"];
+          if (isObjectNested(args)) {
+            let header = Object.keys(args);
+            // Check for nested objects and include their keys
+            const getAllKeys = (obj, keysSet = new Set()) => {
+              for (const key in obj) {
+                if (typeof obj[key] === "object" && obj[key] !== null) {
+                  for (const nestedKey in obj[key]) {
+                    keysSet.add(nestedKey);
+                  }
+                }
+              }
+              return Array.from(keysSet);
+            };
+
+            // Get all nested keys
+            header = getAllKeys(args);
+            return header;
+          } else {
+            return ["Value"];
+          }
         };
 
         let rows = () => {
