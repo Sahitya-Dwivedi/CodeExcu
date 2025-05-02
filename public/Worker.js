@@ -948,10 +948,14 @@ self.onmessage = (e) => {
         headerCache = null; // Reset cache after table is generated
         return outputLog.push(table);
       } else if (typeof args === "object") {
+        let headerCache = null; // Cache for header results
         isObjectNested = (args) => {
           return Object.values(args).some((val) => typeof val === "object");
         };
         let header = () => {
+          if (headerCache !== null) {
+            return headerCache;
+          }
           if (isObjectNested(args)) {
             let header = Object.keys(args);
             // Check for nested objects and include their keys
@@ -968,14 +972,43 @@ self.onmessage = (e) => {
 
             // Get all nested keys
             header = getAllKeys(args);
-            return header;
+            headerCache= ["Value", ...header];
           } else {
-            return ["Value"];
+            headerCache= ["Value"];
           }
+          return headerCache;
         };
 
         let rows = () => {
-          if (typeof args === "object") {
+          if (isObjectNested(args)) {
+            let transRow = Object.entries(args).map(([key, val], i) => {
+              if (typeof val === "object") {
+                let v = Object.values(val).map((v) => {
+                  if (typeof v === "object") {
+                    return [JSON.stringify(v)];
+                  } else if (typeof v === "string") {
+                    return `'${v}'`;
+                  } else if (Number.isNaN(v)) {
+                    return "NaN";
+                  } else if (typeof v === "boolean") {
+                    return v ? "true" : "false";
+                  } else if (v === null) {
+                    return "null";
+                  } else if (typeof v === "undefined") {
+                    return "undefined";
+                  } else if (typeof v === "function") {
+                    return `${`[Function: ${key}]`}`;
+                  } else {
+                    return v;
+                  }
+                });
+                return [key, ...v];
+              }
+              return [key, val];
+            });
+            originalConsole.log(transRow);
+            return transRow;
+          } else {
             let ent = Object.entries(args);
             ent = ent.map((val, i) => {
               if (typeof val[1] === "object") {
