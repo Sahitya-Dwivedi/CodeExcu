@@ -955,18 +955,19 @@ self.onmessage = (e) => {
         };
 
         function generateSpaces(obj, sorter = [], value) {
-          let key = Object.keys(obj);
-          let sortedNum;
+          let entries = Object.entries(obj);
+          originalConsole.log("entries", entries);
+          let sortedName;
           sorter.forEach(([name, val], i) => {
-            if ((val = value)) {
-              return name;
+            if (val === value) {
+              sortedName = name;
             }
           });
-          originalConsole.log("sortedNum", sortedNum);
+          originalConsole.log("sortedName", sortedName);
           let head = header();
           originalConsole.log(head);
-          let i = head.findIndex((val) => val == key[0]);
-          return Array(i).fill(null);
+          let i = head.findIndex((val) => val == sortedName);
+          return Array(i - 1).fill(null);
         }
 
         let header = () => {
@@ -1014,7 +1015,9 @@ self.onmessage = (e) => {
                       "val",
                       val,
                       "\ntransRowHeader",
-                      transRowHeader.flat(1)
+                      transRowHeader.flat(1),
+                      "\nv",
+                      v
                     );
                     return [
                       ...generateSpaces(val, transRowHeader.flat(1), v),
