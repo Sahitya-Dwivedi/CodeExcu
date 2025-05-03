@@ -949,9 +949,26 @@ self.onmessage = (e) => {
         return outputLog.push(table);
       } else if (typeof args === "object") {
         let headerCache = null; // Cache for header results
+
         isObjectNested = (args) => {
           return Object.values(args).some((val) => typeof val === "object");
         };
+
+        function generateSpaces(obj, sorter = [], value) {
+          let key = Object.keys(obj);
+          let sortedNum;
+          sorter.forEach(([name, val], i) => {
+            if ((val = value)) {
+              return name;
+            }
+          });
+          originalConsole.log("sortedNum", sortedNum);
+          let head = header();
+          originalConsole.log(head);
+          let i = head.findIndex((val) => val == key[0]);
+          return Array(i).fill(null);
+        }
+
         let header = () => {
           if (headerCache !== null) {
             return headerCache;
@@ -972,20 +989,37 @@ self.onmessage = (e) => {
 
             // Get all nested keys
             header = getAllKeys(args);
-            headerCache= ["Value", ...header];
+            headerCache = ["Value", ...header];
           } else {
-            headerCache= ["Value"];
+            headerCache = ["Value"];
           }
           return headerCache;
         };
 
         let rows = () => {
           if (isObjectNested(args)) {
-            let transRow = Object.entries(args).map(([key, val], i) => {
+            let transRow = Object.entries(args);
+            let transRowHeader = [];
+            Object.values(args).forEach((val) => {
               if (typeof val === "object") {
-                let v = Object.values(val).map((v) => {
+                transRowHeader.push(Object.entries(val));
+              }
+            });
+            transRow = transRow.map(([key, val], i) => {
+              if (typeof val === "object") {
+                let RowItem = Object.values(val);
+                RowItem = RowItem.map((v) => {
                   if (typeof v === "object") {
-                    return [JSON.stringify(v)];
+                    originalConsole.log(
+                      "val",
+                      val,
+                      "\ntransRowHeader",
+                      transRowHeader.flat(1)
+                    );
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      JSON.stringify(v),
+                    ];
                   } else if (typeof v === "string") {
                     return `'${v}'`;
                   } else if (Number.isNaN(v)) {
@@ -1002,11 +1036,10 @@ self.onmessage = (e) => {
                     return v;
                   }
                 });
-                return [key, ...v];
+                return [key, ...RowItem.flat(1)];
               }
               return [key, val];
             });
-            originalConsole.log(transRow);
             return transRow;
           } else {
             let ent = Object.entries(args);
