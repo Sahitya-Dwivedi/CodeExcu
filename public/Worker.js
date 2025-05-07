@@ -958,16 +958,38 @@ self.onmessage = (e) => {
           let entries = Object.entries(obj);
           originalConsole.log("entries", entries);
           let sortedName;
+          let PreSortedName;
+          originalConsole.log("sorter", sorter);
+          originalConsole.log("sorter", value);
           sorter.forEach(([name, val], i) => {
             if (val === value) {
               sortedName = name;
+              originalConsole.log(i);
+
+              originalConsole.log(i);
+              if (i !== 0 && entries[i - 1] !== undefined)
+                PreSortedName = entries[i - 1][0];
+              else PreSortedName = null;
+              originalConsole.log("PreSortedName", PreSortedName);
             }
           });
           originalConsole.log("sortedName", sortedName);
           let head = header();
           originalConsole.log(head);
           let i = head.findIndex((val) => val == sortedName);
-          return Array(i - 1).fill(null);
+          let j = head.findIndex((val) => val == PreSortedName);
+          j == -1 ? (j = 0) : j;
+          originalConsole.log(
+            "i",
+            i,
+            "j",
+            j,
+            "PreSortedName",
+            PreSortedName,
+            "i-j",
+            i - j
+          );
+          return Array(i - j - 1).fill(null);
         }
 
         let header = () => {
@@ -1024,7 +1046,11 @@ self.onmessage = (e) => {
                       JSON.stringify(v),
                     ];
                   } else if (typeof v === "string") {
-                    return `'${v}'`;
+                    originalConsole.log("v", v);
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      `'${v}'`,
+                    ];
                   } else if (Number.isNaN(v)) {
                     return "NaN";
                   } else if (typeof v === "boolean") {
