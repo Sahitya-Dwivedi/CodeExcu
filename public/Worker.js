@@ -1,3 +1,5 @@
+const { headers } = require("next/headers");
+
 self.onmessage = (e) => {
   let outputLog = [];
   let count = {};
@@ -339,7 +341,6 @@ self.onmessage = (e) => {
       // Get the stack trace and split it into lines
       const stackLines = err.stack.split("\n");
       const replaceLastEvalWithAnonymous = (stackLines) => {
-        originalConsole.log(stackLines);
         const evalIndices = stackLines.reduce((acc, line, index) => {
           if (line.includes("eval")) acc.push(index);
           return acc;
@@ -368,6 +369,744 @@ self.onmessage = (e) => {
       } else return `${handleLog("console.trace")}${trimmedStack}`;
     };
 
+    const handleTable = (args) => {
+      originalConsole.table(args);
+
+      if (!Array.isArray(args) && typeof args !== "object") {
+        outputLog.push(handleLog(args));
+        return;
+      }
+      if (Array.isArray(args)) {
+        let headerCache = null; // Cache for header results
+
+        // Check if the array is 1D, 2D or nested
+        const is1DArray = (arr) =>
+          Array.isArray(arr) &&
+          arr.every((val) => !Array.isArray(val) && typeof val !== "object");
+        const is2DArray = (arr) =>
+          Array.isArray(arr) && arr.every((val) => Array.isArray(val));
+        const isNestedArray = (arr) =>
+          Array.isArray(arr) && arr.some((val) => Array.isArray(val));
+
+        // check if the array contain objects
+        const isObjectArray = (arr) =>
+          Array.isArray(arr) && arr.every((val) => typeof val === "object");
+        const isObjectNestedArray = (arr) =>
+          Array.isArray(arr) &&
+          arr.some((val) => typeof val === "object" && !Array.isArray(val));
+
+        // Stringify arrays
+        function InDepthStringification(arr) {
+          return arr.map((val) => {
+            if (Array.isArray(val)) {
+              return val.map((subVal) => {
+                if (Array.isArray(subVal)) {
+                  return JSON.stringify(subVal);
+                } else if (typeof subVal === "string") {
+                  return `'${subVal}'`;
+                } else if (Number.isNaN(subVal)) {
+                  return "NaN";
+                } else if (typeof subVal === "boolean") {
+                  return subVal ? "true" : "false";
+                } else {
+                  return subVal;
+                }
+              });
+            } else {
+              if (Array.isArray(val)) {
+                return JSON.stringify(val);
+              } else if (typeof val === "string") {
+                return `'${val}'`;
+              } else if (Number.isNaN(val)) {
+                return "NaN";
+              } else if (typeof val === "boolean") {
+                return val ? "true" : "false";
+              } else {
+                return val;
+              }
+            }
+          });
+        }
+
+        // generating extra spaces for table
+        const generateSpaces = (length = 1) => {
+          let spaces = header().length - length;
+          return Array(spaces).fill(null);
+        };
+
+        // Replace holes with null
+        /**
+         * Recursively replaces holes (undefined elements) in an array with the next elements.
+         *
+         * @param {Array} arr - The array to process, which may contain nested arrays.
+         * @returns {Array} The processed array with holes removed.
+         */
+        const replaceHoles = (arr) => {
+          for (let i = 0; i < arr.length; i++) {
+            if (Array.isArray(arr[i])) {
+              replaceHoles(arr[i]);
+            } else if (!(i in arr)) {
+              replaceHoles(arr[i]);
+            }
+          }
+          return arr;
+        };
+
+        // Handle undefined and null values
+        const handleUndefinedAndNull = (arr) => {
+          return arr.map((val) => {
+            if (Array.isArray(val)) {
+              return handleUndefinedAndNull(val);
+            } else if (val === undefined) {
+              return "undefined";
+            } else if (val === null) {
+              return "null";
+            } else {
+              return val;
+            }
+          });
+        };
+
+        // handle Objects stringification
+        const ObjStringification = (obj) => {
+          let key = Object.keys(obj);
+          let val = Object.values(obj);
+          if (key.length > 1) {
+            return `{${key
+              .map(
+                (k, i) =>
+                  `${k}: ${typeof val[i] == "object" ? "[Object]" : val[i]}`
+              )
+              .join(", ")}}`;
+          } else if (key.length == 0) {
+            return "{}";
+          } else if (key.length == 1) {
+            return `${key}: ${typeof val == "object" ? "[Object]" : val}`;
+          } else {
+            return `${key}: ${val}`;
+          }
+        };
+
+        function handleObjectArray(args, indReq = true) {
+          let transRow = args;
+          transRow = handleUndefinedAndNull(transRow);
+          transRow = args.map((obj, i) => {
+            let objHeader = header(obj);
+            const row = [];
+            objHeader.forEach((key) => {
+              if (key in obj) {
+                let result;
+                if (
+                  typeof obj[key] === "object" &&
+                  !Array.isArray(obj[key]) &&
+                  obj[key] !== null
+                ) {
+                  result =
+                    obj[key] instanceof Date
+                      ? obj[key].toString()
+                      : ObjStringification(obj[key]);
+                } else if (Array.isArray(obj[key])) {
+                  result = `[${InDepthStringification(obj[key])}]`;
+                } else if (typeof obj[key] === "string") {
+                  result = `'${obj[key]}'`;
+                } else if (Number.isNaN(obj[key])) {
+                  result = "NaN";
+                } else if (typeof obj[key] === "boolean") {
+                  result = obj[key] ? "true" : "false";
+                } else if (obj[key] === null) {
+                  result = "null";
+                } else if (typeof obj[key] === "undefined") {
+                  result = "undefined";
+                } else if (typeof obj[key] === "function") {
+                  result = `${`[Function: ${key}]`}`;
+                } else {
+                  result = obj[key];
+                }
+                row.push(result);
+              } else {
+                row.push(undefined);
+              }
+            });
+            return indReq
+              ? [i, ...row, ...generateSpaces(row.length)]
+              : [...row, ...generateSpaces(row.length)];
+          });
+          return transRow;
+        }
+
+        // Generate table
+
+        const header = () => {
+          // Return cached result if available
+          if (headerCache !== null) {
+            return headerCache;
+          }
+
+          function ProperArrCopy(arr) {
+            if (!Array.isArray(arr)) return arr;
+            let copy = new Array(arr.length);
+            for (let i = 0; i < arr.length; i++) {
+              if (i in arr) {
+                copy[i] = ProperArrCopy(arr[i]);
+              }
+            }
+            return copy;
+          }
+
+          // Get unique keys from all objects in the array
+          /**
+           * Gets all unique keys from an array of objects
+           * @param {Array} objArray - Array of objects to extract keys from
+           * @returns {Array} - Array of unique keys
+           */
+          function getUniqueObjectKeys(objArray) {
+            //  [Array(2), {…}, 'Just a string', 42, {…}, null, undefined]
+            const keysSet = new Set();
+            objArray.forEach((obj) => {
+              if (obj && typeof obj === "object" && !Array.isArray(obj)) {
+                Object.keys(obj).forEach((key) => keysSet.add(key));
+              }
+            });
+            return Array.from(keysSet);
+          }
+          let HeaderArgs = ProperArrCopy(args);
+
+          // handle undefined and null values in consolelog
+          // holes and undefined and sets and str in log
+          if (is1DArray(HeaderArgs)) {
+            headerCache = ["Value"];
+          } else if (is2DArray(HeaderArgs)) {
+            let maxLength = Math.max(
+              ...HeaderArgs.map((arr) => arr.length).filter(
+                (length) => !isNaN(length)
+              )
+            );
+
+            // Counting the number of arrays in the header
+            let OnlyArr = HeaderArgs.filter((arr) => Array.isArray(arr));
+            let NumArr = OnlyArr.length;
+
+            // finding the index of the holes in the header
+            let holes = [];
+            function findHoles(arr) {
+              for (let i = 0; i < arr.length; i++) {
+                if (Array.isArray(arr[i])) {
+                  findHoles(arr[i]);
+                } else if (!(i in arr)) {
+                  holes.push(i);
+                }
+              }
+              return holes;
+            }
+
+            findHoles(OnlyArr);
+
+            // sorting holes array
+            holes.sort((a, b) => a - b);
+
+            // finding the number of index of the arrays in the header
+            let elementIndexCount = {};
+            let index;
+            for (let i = 0; i < holes.length; i++) {
+              index = holes[i];
+              if (elementIndexCount[index]) {
+                elementIndexCount[index]++;
+              } else {
+                elementIndexCount[index] = 1;
+              }
+            }
+            let removal = [];
+            for (const key in elementIndexCount) {
+              if (NumArr == elementIndexCount[key]) {
+                removal.push(parseInt(key));
+              }
+            }
+
+            headerCache = Array.from({ length: maxLength }, (_, i) => i).filter(
+              (val) => !removal.includes(val)
+            );
+          } else if (isObjectArray(HeaderArgs)) {
+            headerCache = getUniqueObjectKeys(HeaderArgs);
+          } else if (isObjectNestedArray(HeaderArgs)) {
+            let maxLength = Math.max(
+              ...HeaderArgs.map((arr) =>
+                Array.isArray(arr) ? arr.length : 0
+              ).filter((length) => !isNaN(length))
+            );
+            // Counting the number of arrays in the header
+            let OnlyArr = HeaderArgs.filter((arr) => Array.isArray(arr));
+            let NumArr = OnlyArr.length;
+
+            // finding the index of the holes in the header
+            let holes = [];
+            function findHoles(arr) {
+              for (let i = 0; i < arr.length; i++) {
+                if (Array.isArray(arr[i])) {
+                  findHoles(arr[i]);
+                } else if (!(i in arr)) {
+                  holes.push(i);
+                }
+              }
+              return holes;
+            }
+
+            findHoles(OnlyArr);
+
+            // sorting holes array
+            holes.sort((a, b) => a - b);
+
+            // finding the number of index of the arrays in the header
+            let elementIndexCount = {};
+            let index;
+            for (let i = 0; i < holes.length; i++) {
+              index = holes[i];
+              if (elementIndexCount[index]) {
+                elementIndexCount[index]++;
+              } else {
+                elementIndexCount[index] = 1;
+              }
+            }
+            let removal = [];
+            for (const key in elementIndexCount) {
+              if (NumArr == elementIndexCount[key]) {
+                removal.push(parseInt(key));
+              }
+            }
+
+            let transHeader = Array.from(
+              { length: maxLength },
+              (_, i) => i
+            ).filter((val) => !removal.includes(val));
+
+            headerCache = [
+              ...transHeader,
+              ...getUniqueObjectKeys(HeaderArgs),
+              "Values",
+            ];
+          } else if (isNestedArray(HeaderArgs)) {
+            let maxLength = Math.max(
+              ...HeaderArgs.map((arr) =>
+                Array.isArray(arr) ? arr.length : 0
+              ).filter((length) => !isNaN(length))
+            );
+            // Counting the number of arrays in the header
+            let OnlyArr = HeaderArgs.filter((arr) => Array.isArray(arr));
+            let NumArr = OnlyArr.length;
+
+            // finding the index of the holes in the header
+            let holes = [];
+            function findHoles(arr) {
+              for (let i = 0; i < arr.length; i++) {
+                if (Array.isArray(arr[i])) {
+                  findHoles(arr[i]);
+                } else if (!(i in arr)) {
+                  holes.push(i);
+                }
+              }
+              return holes;
+            }
+
+            findHoles(OnlyArr);
+
+            // sorting holes array
+            holes.sort((a, b) => a - b);
+
+            // finding the number of index of the arrays in the header
+            let elementIndexCount = {};
+            let index;
+            for (let i = 0; i < holes.length; i++) {
+              index = holes[i];
+              if (elementIndexCount[index]) {
+                elementIndexCount[index]++;
+              } else {
+                elementIndexCount[index] = 1;
+              }
+            }
+            let removal = [];
+            for (const key in elementIndexCount) {
+              if (NumArr == elementIndexCount[key]) {
+                removal.push(parseInt(key));
+              }
+            }
+
+            let transHeader = Array.from(
+              { length: maxLength },
+              (_, i) => i
+            ).filter((val) => !removal.includes(val));
+
+            headerCache = [...transHeader, "Values"];
+          }
+
+          return headerCache;
+        };
+
+        const rows = () => {
+          if (is1DArray(args)) {
+            let transRow = args.map((val, i) => [i, val]);
+            transRow = InDepthStringification(transRow);
+            transRow = handleUndefinedAndNull(transRow);
+            return transRow;
+          } else if (is2DArray(args)) {
+            let maxLength = Math.max(
+              ...args
+                .map((arr) => arr.length)
+                .filter((length) => !isNaN(length))
+            );
+            args = InDepthStringification(args);
+            args = handleUndefinedAndNull(args);
+
+            let OnlyArr = args.filter((arr) => Array.isArray(arr));
+            let NumArr = OnlyArr.length;
+
+            // finding the index of the holes in the header
+            let holes = [];
+            function findHoles(arr) {
+              for (let i = 0; i < arr.length; i++) {
+                if (Array.isArray(arr[i])) {
+                  findHoles(arr[i]);
+                } else if (!(i in arr)) {
+                  holes.push(i);
+                }
+              }
+              return holes;
+            }
+
+            findHoles(OnlyArr);
+
+            // sorting holes array
+            holes.sort((a, b) => a - b);
+
+            // finding the number of index of the arrays in the header
+            let elementIndexCount = {};
+            let index;
+            for (let i = 0; i < holes.length; i++) {
+              index = holes[i];
+              if (elementIndexCount[index]) {
+                elementIndexCount[index]++;
+              } else {
+                elementIndexCount[index] = 1;
+              }
+            }
+            let removal = [];
+            for (const key in elementIndexCount) {
+              if (NumArr == elementIndexCount[key]) {
+                removal.push(parseInt(key));
+              }
+            }
+
+            let transRow = args.map((arr, i) => {
+              if (Array.isArray(arr)) {
+                for (let i = 0; i < arr.length; i++) {
+                  if (Array.isArray(arr[i])) {
+                    replaceHoles(arr[i]);
+                  } else if (!(i in arr)) {
+                    arr[i] = null;
+                  }
+                }
+                arr = arr.filter((_, i) => !removal.includes(i));
+
+                return [i, ...arr, ...generateSpaces(arr.length)];
+              } else {
+                return [i, ...generateSpaces(), arr];
+              }
+            });
+
+            return transRow;
+          } else if (isObjectArray(args)) {
+            let transRow = handleObjectArray(args);
+            return transRow;
+          } else if (isObjectNestedArray(args)) {
+            let transRow = args;
+            transRow = InDepthStringification(transRow);
+            transRow = handleUndefinedAndNull(transRow);
+
+            let OnlyArr = transRow.filter((arr) => Array.isArray(arr));
+            let NumArr = OnlyArr.length;
+
+            // finding the index of the holes in the header
+            let holes = [];
+            function findHoles(arr) {
+              for (let i = 0; i < arr.length; i++) {
+                if (Array.isArray(arr[i])) {
+                  findHoles(arr[i]);
+                } else if (!(i in arr)) {
+                  holes.push(i);
+                }
+              }
+              return holes;
+            }
+
+            findHoles(OnlyArr);
+
+            // sorting holes array
+            holes.sort((a, b) => a - b);
+
+            // finding the number of index of the arrays in the header
+            let elementIndexCount = {};
+            let index;
+            for (let i = 0; i < holes.length; i++) {
+              index = holes[i];
+              if (elementIndexCount[index]) {
+                elementIndexCount[index]++;
+              } else {
+                elementIndexCount[index] = 1;
+              }
+            }
+            let removal = [];
+            for (const key in elementIndexCount) {
+              if (NumArr == elementIndexCount[key]) {
+                removal.push(parseInt(key));
+              }
+            }
+            transRow = transRow.map((arr, i) => {
+              if (Array.isArray(arr)) {
+                for (let i = 0; i < arr.length; i++) {
+                  if (Array.isArray(arr[i])) {
+                    replaceHoles(arr[i]);
+                  } else if (!(i in arr)) {
+                    arr[i] = null;
+                  }
+                }
+                arr = arr.filter((_, i) => !removal.includes(i));
+
+                return [i, ...arr, ...generateSpaces(arr.length)];
+              } else if (typeof arr === "object") {
+                let objArr = handleObjectArray([arr], false).flat(1);
+                return [i, ...objArr];
+              } else {
+                return [i, ...generateSpaces(), arr];
+              }
+            });
+
+            return transRow;
+          } else if (isNestedArray(args)) {
+            let transRow = args;
+            transRow = InDepthStringification(transRow);
+            transRow = handleUndefinedAndNull(transRow);
+
+            let OnlyArr = transRow.filter((arr) => Array.isArray(arr));
+            let NumArr = OnlyArr.length;
+
+            // finding the index of the holes in the header
+            let holes = [];
+            function findHoles(arr) {
+              for (let i = 0; i < arr.length; i++) {
+                if (Array.isArray(arr[i])) {
+                  findHoles(arr[i]);
+                } else if (!(i in arr)) {
+                  holes.push(i);
+                }
+              }
+              return holes;
+            }
+
+            findHoles(OnlyArr);
+
+            // sorting holes array
+            holes.sort((a, b) => a - b);
+
+            // finding the number of index of the arrays in the header
+            let elementIndexCount = {};
+            let index;
+            for (let i = 0; i < holes.length; i++) {
+              index = holes[i];
+              if (elementIndexCount[index]) {
+                elementIndexCount[index]++;
+              } else {
+                elementIndexCount[index] = 1;
+              }
+            }
+            let removal = [];
+            for (const key in elementIndexCount) {
+              if (NumArr == elementIndexCount[key]) {
+                removal.push(parseInt(key));
+              }
+            }
+            transRow = transRow.map((arr, i) => {
+              if (Array.isArray(arr)) {
+                for (let i = 0; i < arr.length; i++) {
+                  if (Array.isArray(arr[i])) {
+                    replaceHoles(arr[i]);
+                  } else if (!(i in arr)) {
+                    arr[i] = null;
+                  }
+                }
+                arr = arr.filter((_, i) => !removal.includes(i));
+
+                return [i, ...arr, ...generateSpaces(arr.length)];
+              } else {
+                return [i, ...generateSpaces(), arr];
+              }
+            });
+
+            return transRow;
+          }
+        };
+        // rows();
+        let table = {
+          headers: header(),
+          rows: rows(),
+        };
+        headerCache = null; // Reset cache after table is generated
+        return outputLog.push(table);
+      } else if (typeof args === "object") {
+        let headerCache = null; // Cache for header results
+
+        isObjectNested = (args) => {
+          return Object.values(args).some((val) => typeof val === "object");
+        };
+
+        function generateSpaces(obj, sorter = [], value) {
+          let entries = Object.entries(obj);
+          let sortedName;
+          let PreSortedName;
+          let head = header();
+
+          sorter.forEach(([name, val], i) => {
+            if (val === value) {
+              sortedName = name;
+              let k = entries.findIndex(([name, val], i) => name == sortedName);
+              if (i !== 0 && entries[k - 1] !== undefined)
+                PreSortedName = entries[k - 1][0];
+              else PreSortedName = null;
+            }
+          });
+
+          let i = head.findIndex((val) => val == sortedName);
+          let j = head.findIndex((val) => val == PreSortedName);
+
+          return Array(i - j - 1).fill(null);
+        }
+        function generateTrailingSpaces(value = 1) {
+          let spaces = header().length - value;
+          return Array(spaces).fill(null);
+        }
+
+        let header = () => {
+          if (headerCache !== null) {
+            return headerCache;
+          }
+          if (isObjectNested(args)) {
+            let header = Object.keys(args);
+            // Check for nested objects and include their keys
+            const getAllKeys = (obj, keysSet = new Set()) => {
+              for (const key in obj) {
+                if (typeof obj[key] === "object" && obj[key] !== null) {
+                  for (const nestedKey in obj[key]) {
+                    keysSet.add(nestedKey);
+                  }
+                }
+              }
+              return Array.from(keysSet);
+            };
+
+            // Get all nested keys
+            header = getAllKeys(args);
+            headerCache = ["Value", ...header];
+          } else {
+            headerCache = ["Value"];
+          }
+          return headerCache;
+        };
+
+        let rows = () => {
+          if (isObjectNested(args)) {
+            let transRow = Object.entries(args);
+            let transRowHeader = [];
+            Object.values(args).forEach((val) => {
+              if (typeof val === "object") {
+                transRowHeader.push(Object.entries(val));
+              }
+            });
+            transRow = transRow.map(([key, val], i) => {
+              if (typeof val === "object") {
+                let RowItem = Object.values(val);
+                RowItem = RowItem.map((v) => {
+                  if (typeof v === "object") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      JSON.stringify(v),
+                    ];
+                  } else if (typeof v === "string") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      `'${v}'`,
+                    ];
+                  } else if (Number.isNaN(v)) {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "NaN",
+                    ];
+                  } else if (typeof v === "boolean") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      v ? "true" : "false",
+                    ];
+                  } else if (v === null) {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "null",
+                    ];
+                  } else if (typeof v === "undefined") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "undefined",
+                    ];
+                  } else if (typeof v === "function") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      `[Function: ${key}]`,
+                    ];
+                  } else {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      v,
+                    ];
+                  }
+                });
+                originalConsole.log(RowItem.flat(1));
+                return [
+                  key,
+                  ...RowItem.flat(1),
+                  ...generateTrailingSpaces(RowItem.flat(1).length),
+                ];
+              }
+              return [key, val, ...generateTrailingSpaces()];
+            });
+            return transRow;
+          } else {
+            let ent = Object.entries(args);
+            ent = ent.map((val, i) => {
+              if (typeof val[1] === "object") {
+                return [i, ObjStringification(val[1])];
+              } else if (typeof val[1] === "string") {
+                return [i, `'${val[1]}'`];
+              } else if (Number.isNaN(val[1])) {
+                return [i, "NaN"];
+              } else if (typeof val[1] === "boolean") {
+                return [i, val[1] ? "true" : "false"];
+              } else if (val[1] === null) {
+                return [i, "null"];
+              } else if (typeof val[1] === "undefined") {
+                return [i, "undefined"];
+              } else if (typeof val[1] === "function") {
+                return [i, `${`[Function: ${val}]`}`];
+              } else {
+                return [i, val[1]];
+              }
+            });
+            return ent;
+          }
+        };
+
+        let table = {
+          headers: header(),
+          rows: rows(),
+        };
+        return outputLog.push(table);
+      }
+    };
+
     console.log = (...args) =>
       outputLog.push(`${grpIndent}${handleLog(...args)}`);
     console.error = (...args) =>
@@ -378,8 +1117,7 @@ self.onmessage = (e) => {
       outputLog.push(`${grpIndent}${handleInfo(...args)}`);
     console.debug = (...args) =>
       outputLog.push(`${grpIndent}${handleDebug(...args)}`);
-    console.table = (...args) =>
-      outputLog.push(`${grpIndent}${handleTable(...args)}`);
+    console.table = (args) => handleTable(args);
     console.assert = (condition, ...args) =>
       outputLog.push(`${grpIndent}${handleAssert(condition, ...args)}`);
     console.clear = () => outputLog.push(`${grpIndent}${handleClear()}`);
@@ -433,218 +1171,13 @@ self.onmessage = (e) => {
     console.trace = originalConsole.trace;
   };
 
-  // Handle console.table
-  const handleTable = (args) => {
-    let maxLength = 0;
-    let maxArr = [];
-    let subLen = 0;
-    // function that check if array is 2D
-    const is2DArr = (arr) =>
-      Array.isArray(arr[0]) && arr[0].some(Array.isArray);
-
-    // function that check if array is entirely 2D
-    const isEntire2DArray = (arr) =>
-      arr.every((subarray) => Array.isArray(subarray));
-
-    // Check length of subarrays and find max length
-    const checkLength = (arr) => {
-      arr[0] = arr[0].map((subarr) => {
-        if (subarr === null) {
-          return ["null"];
-        } else if (subarr === undefined) {
-          return ["undefined"];
-        }
-        return subarr;
-      });
-      arr[0].forEach((subarr) => {
-        if (subarr.length > maxLength) {
-          maxLength = subarr.length;
-          if (Array.isArray(subarr)) {
-            maxArr = subarr;
-            subLen = maxLength;
-          } else if (typeof subarr === "string") {
-            maxLength = 1;
-          }
-          if (subLen != 0) {
-            maxLength = subLen;
-          }
-        }
-      });
-    };
-
-    // checking if array is 2D
-    const res = is2DArr(args);
-    // checking if array is entirely 2D
-    let ent2DArrRes = false;
-
-    let NewArr = [];
-
-    if (res) {
-      ent2DArrRes = isEntire2DArray(args[0]);
-      checkLength(args);
-      // adding empty strings to subarrays
-      NewArr = args[0].map((val) => {
-        if (Array.isArray(val)) {
-          let spacesNo = maxLength - val.length;
-          for (let i = 0; i < spacesNo; i++) {
-            val.push("");
-          }
-          return val;
-        } else if (typeof val === "object") {
-          return [val];
-        } else {
-          let spacesNo = maxLength;
-          let genSpaces = [];
-          for (let i = 0; i < spacesNo; i++) {
-            genSpaces.push("");
-          }
-          return [...genSpaces, val];
-        }
-      });
-    }
-    // function that returns headers
-    const headers = () => {
-      let head = maxArr.map((_, i) => i);
-      if (ent2DArrRes) {
-        return head;
-      } else if (res) {
-        let headersSet = new Set();
-        args[0].forEach((item) => {
-          if (typeof item === "object" && !Array.isArray(item)) {
-            Object.keys(item).forEach((key) => headersSet.add(key));
-          }
-        });
-        return [...head, "Values", ...headersSet];
-      } else if (typeof args[0] === "object" && Array.isArray(args[0])) {
-        let headersSet = new Set();
-        args[0].forEach((item) => {
-          if (typeof item === "object" && !Array.isArray(item)) {
-            Object.keys(item).forEach((key) => headersSet.add(key));
-          }
-        });
-        if (headersSet.size > 0) return [...headersSet];
-        else return [...headersSet, "Values"];
-      } else {
-        return ["Values"];
-      }
-    };
-
-    // Function to ensure no item is repeated in headerKeys
-    const ensureUniqueHeaders = (headers) => {
-      return Array.from(new Set(headers));
-    };
-    let headerKeys = ensureUniqueHeaders(headers());
-
-    // function that returns rows
-    const rows = () => {
-      if (!res) {
-        const transformedArr = args[0].map((item) => [item]);
-        return transformedArr.map((val, i) => {
-          let rowSets = val
-            .map((subval) => {
-              if (Array.isArray(subval)) {
-                return JSON.stringify([...subval]);
-              } else if (typeof subval === "object" && !Array.isArray(subval)) {
-                let objrow = Object.values(subval);
-
-                let OgNum = 0;
-                let num = -1;
-                for (let i = 0; i < headerKeys.length; i++) {
-                  let element = headerKeys[i];
-                  objrow = objrow
-                    .map((val) => {
-                      if (subval[element] === val) {
-                        let genSpaces = [];
-                        num < 0 ? (num = i - OgNum) : (num = i - OgNum - 1);
-                        OgNum = i;
-                        for (let j = 0; j < num; j++) {
-                          genSpaces.push("");
-                        }
-                        return [...genSpaces, val];
-                      } else {
-                        return val;
-                      }
-                    })
-                    .flat(2);
-                }
-
-                return [objrow];
-              } else {
-                return subval;
-              }
-            })
-            .flat(2);
-          return [i, ...rowSets];
-        });
-      } else {
-        return NewArr.map((val, i) => {
-          if (Array.isArray(val)) {
-            let rowSets = val
-              .map((subval) => {
-                if (Array.isArray(subval)) {
-                  return JSON.stringify([...subval]);
-                } else if (
-                  typeof subval === "object" &&
-                  !Array.isArray(subval)
-                ) {
-                  let objrow = Object.values(subval);
-
-                  let OgNum = 0;
-                  let num = -1;
-                  for (let i = 0; i < headerKeys.length; i++) {
-                    let element = headerKeys[i];
-                    objrow = objrow
-                      .map((val) => {
-                        if (subval[element] === val) {
-                          let genSpaces = [];
-                          num < 0 ? (num = i - OgNum) : (num = i - OgNum - 1);
-                          OgNum = i;
-                          for (let j = 0; j < num; j++) {
-                            genSpaces.push("");
-                          }
-                          return [...genSpaces, val];
-                        } else {
-                          return val;
-                        }
-                      })
-                      .flat(2);
-                  }
-
-                  return [objrow];
-                } else {
-                  return subval;
-                }
-              })
-              .flat(2);
-            return [i, ...rowSets];
-          } else if (typeof val === "object" && !Array.isArray(val)) {
-            let rowSets = new Set();
-            Object.values(val).forEach((key) => rowSets.add(key));
-            return [i, ...rowSets];
-          }
-        });
-      }
-    };
-    if (Array.isArray(args[0])) {
-      const tableData = {
-        headers: headerKeys,
-        rows: rows(),
-      };
-      outputLog.push(tableData);
-    } else if (typeof args[0] === "object") {
-      const tableData = {
-        headers: headerKeys,
-        rows: Object.entries(args[0]),
-      };
-      outputLog.push(tableData);
-    }
-  };
-
   // Evaluate code
   const evaluateCode = () => {
     try {
       eval(e.data);
     } catch (error) {
+      originalConsole.error(error);
+      originalConsole.trace(error);
       outputLog.push(`${error}`);
     }
   };
@@ -653,7 +1186,6 @@ self.onmessage = (e) => {
   overwriteConsole();
   evaluateCode();
   restoreConsole();
-
   // Set output log
   self.postMessage(outputLog);
 };
