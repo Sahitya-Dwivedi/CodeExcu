@@ -956,39 +956,23 @@ self.onmessage = (e) => {
 
         function generateSpaces(obj, sorter = [], value) {
           let entries = Object.entries(obj);
-          originalConsole.log("entries", entries);
           let sortedName;
           let PreSortedName;
-          originalConsole.log("sorter", sorter);
-          originalConsole.log("sorter", value);
+          let head = header();
+
           sorter.forEach(([name, val], i) => {
             if (val === value) {
               sortedName = name;
-              originalConsole.log(i);
-
-              originalConsole.log(i);
-              if (i !== 0 && entries[i - 1] !== undefined)
-                PreSortedName = entries[i - 1][0];
+              let k = entries.findIndex(([name, val], i) => name == sortedName);
+              if (i !== 0 && entries[k - 1] !== undefined)
+                PreSortedName = entries[k - 1][0];
               else PreSortedName = null;
-              originalConsole.log("PreSortedName", PreSortedName);
             }
           });
-          originalConsole.log("sortedName", sortedName);
-          let head = header();
-          originalConsole.log(head);
+
           let i = head.findIndex((val) => val == sortedName);
           let j = head.findIndex((val) => val == PreSortedName);
-          j == -1 ? (j = 0) : j;
-          originalConsole.log(
-            "i",
-            i,
-            "j",
-            j,
-            "PreSortedName",
-            PreSortedName,
-            "i-j",
-            i - j
-          );
+
           return Array(i - j - 1).fill(null);
         }
 
@@ -1033,36 +1017,45 @@ self.onmessage = (e) => {
                 let RowItem = Object.values(val);
                 RowItem = RowItem.map((v) => {
                   if (typeof v === "object") {
-                    originalConsole.log(
-                      "val",
-                      val,
-                      "\ntransRowHeader",
-                      transRowHeader.flat(1),
-                      "\nv",
-                      v
-                    );
                     return [
                       ...generateSpaces(val, transRowHeader.flat(1), v),
                       JSON.stringify(v),
                     ];
                   } else if (typeof v === "string") {
-                    originalConsole.log("v", v);
                     return [
                       ...generateSpaces(val, transRowHeader.flat(1), v),
                       `'${v}'`,
                     ];
                   } else if (Number.isNaN(v)) {
-                    return "NaN";
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "NaN",
+                    ];
                   } else if (typeof v === "boolean") {
-                    return v ? "true" : "false";
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      v ? "true" : "false",
+                    ];
                   } else if (v === null) {
-                    return "null";
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "null",
+                    ];
                   } else if (typeof v === "undefined") {
-                    return "undefined";
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "undefined",
+                    ];
                   } else if (typeof v === "function") {
-                    return `${`[Function: ${key}]`}`;
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      `[Function: ${key}]`,
+                    ];
                   } else {
-                    return v;
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      v,
+                    ];
                   }
                 });
                 return [key, ...RowItem.flat(1)];
