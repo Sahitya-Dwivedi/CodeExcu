@@ -975,6 +975,10 @@ self.onmessage = (e) => {
 
           return Array(i - j - 1).fill(null);
         }
+        function generateTrailingSpaces(value = 1) {
+          let spaces = header().length - value;
+          return Array(spaces).fill(null);
+        }
 
         let header = () => {
           if (headerCache !== null) {
@@ -1058,9 +1062,14 @@ self.onmessage = (e) => {
                     ];
                   }
                 });
-                return [key, ...RowItem.flat(1)];
+                originalConsole.log(RowItem.flat(1));
+                return [
+                  key,
+                  ...RowItem.flat(1),
+                  ...generateTrailingSpaces(RowItem.flat(1).length),
+                ];
               }
-              return [key, val];
+              return [key, val, ...generateTrailingSpaces()];
             });
             return transRow;
           } else {
