@@ -376,6 +376,7 @@ self.onmessage = (e) => {
         outputLog.push(handleLog(args));
         return;
       }
+
       if (Array.isArray(args)) {
         let headerCache = null; // Cache for header results
 
@@ -982,6 +983,25 @@ self.onmessage = (e) => {
           return Array(spaces).fill(null);
         }
 
+        const ObjStringification = (obj) => {
+          let key = Object.keys(obj);
+          let val = Object.values(obj);
+          if (key.length > 1) {
+            return `{${key
+              .map(
+                (k, i) =>
+                  `${k}: ${typeof val[i] == "object" ? "[Object]" : val[i]}`
+              )
+              .join(", ")}}`;
+          } else if (key.length == 0) {
+            return "{}";
+          } else if (key.length == 1) {
+            return `{${key}: ${typeof val == "object" ? "[Object]" : val}}`;
+          } else {
+            return `${key}: ${val}`;
+          }
+        };
+
         let header = () => {
           if (headerCache !== null) {
             return headerCache;
@@ -1023,9 +1043,10 @@ self.onmessage = (e) => {
                 let RowItem = Object.values(val);
                 RowItem = RowItem.map((v) => {
                   if (typeof v === "object") {
+                    originalConsole.log(`Object: ${v}`);
                     return [
                       ...generateSpaces(val, transRowHeader.flat(1), v),
-                      JSON.stringify(v),
+                      ObjStringification(v),
                     ];
                   } else if (typeof v === "string") {
                     return [
