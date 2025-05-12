@@ -953,6 +953,9 @@ self.onmessage = (e) => {
       } else if (typeof args === "object") {
         let headerCache = null; // Cache for header results
 
+        isObjectOnly = (args) => {
+          return Object.values(args).every((val) => typeof val === "object");
+        };
         isObjectNested = (args) => {
           return Object.values(args).some((val) => typeof val === "object");
         };
@@ -986,6 +989,12 @@ self.onmessage = (e) => {
         const ObjStringification = (obj) => {
           let key = Object.keys(obj);
           let val = Object.values(obj);
+          let isCircular = false;
+          val.forEach((v) => {
+            if (typeof v === "object") {
+              isCircular = true;
+            }
+          });
           if (key.length > 1) {
             return `{${key
               .map(
@@ -995,10 +1004,10 @@ self.onmessage = (e) => {
               .join(", ")}}`;
           } else if (key.length == 0) {
             return "{}";
-          } else if (key.length == 1) {
+          } else if (key.length == 1 && isCircular) {
             return `{${key}: ${typeof val == "object" ? "[Object]" : val}}`;
           } else {
-            return `${key}: ${val}`;
+            return `{${key}: ${val}}`;
           }
         };
 
@@ -1006,22 +1015,24 @@ self.onmessage = (e) => {
           if (headerCache !== null) {
             return headerCache;
           }
-          if (isObjectNested(args)) {
-            let header = Object.keys(args);
-            // Check for nested objects and include their keys
-            const getAllKeys = (obj, keysSet = new Set()) => {
-              for (const key in obj) {
-                if (typeof obj[key] === "object" && obj[key] !== null) {
-                  for (const nestedKey in obj[key]) {
-                    keysSet.add(nestedKey);
-                  }
+
+          const getAllKeys = (obj, keysSet = new Set()) => {
+            for (const key in obj) {
+              if (typeof obj[key] === "object" && obj[key] !== null) {
+                for (const nestedKey in obj[key]) {
+                  keysSet.add(nestedKey);
                 }
               }
-              return Array.from(keysSet);
-            };
+            }
+            return Array.from(keysSet);
+          };
 
+          if (isObjectOnly(args)) {
+            let header = getAllKeys(args);
+            headerCache = [...header]
+          } else if (isObjectNested(args)) {
             // Get all nested keys
-            header = getAllKeys(args);
+            let header = getAllKeys(args);
             headerCache = ["Value", ...header];
           } else {
             headerCache = ["Value"];
@@ -1043,7 +1054,6 @@ self.onmessage = (e) => {
                 let RowItem = Object.values(val);
                 RowItem = RowItem.map((v) => {
                   if (typeof v === "object") {
-                    originalConsole.log(`Object: ${v}`);
                     return [
                       ...generateSpaces(val, transRowHeader.flat(1), v),
                       ObjStringification(v),
@@ -1085,7 +1095,6 @@ self.onmessage = (e) => {
                     ];
                   }
                 });
-                originalConsole.log(RowItem.flat(1));
                 return [
                   key,
                   ...RowItem.flat(1),
