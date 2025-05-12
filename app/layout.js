@@ -14,7 +14,7 @@ const geistMono = localFont({
 
 export const metadata = {
   title: "CodeExcu",
-  description: "Here, you can write, edit, compile your code",
+  description: "Here, you can write, edit, and run your code",
 };
 
 export default function RootLayout({ children }) {
