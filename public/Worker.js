@@ -978,7 +978,7 @@ self.onmessage = (e) => {
 
           let i = head.findIndex((val) => val == sortedName);
           let j = head.findIndex((val) => val == PreSortedName);
-
+originalConsole.log(i,j)
           return Array(i - j - 1).fill(null);
         }
         function generateTrailingSpaces(value = 1) {
@@ -1033,6 +1033,7 @@ self.onmessage = (e) => {
           } else if (isObjectNested(args)) {
             // Get all nested keys
             let header = getAllKeys(args);
+            originalConsole.log(header);
             headerCache = ["Value", ...header];
           } else {
             headerCache = ["Value"];
@@ -1045,12 +1046,12 @@ self.onmessage = (e) => {
             let transRow = Object.entries(args);
             let transRowHeader = [];
             Object.values(args).forEach((val) => {
-              if (typeof val === "object") {
+              if (typeof val === "object" && !Array.isArray(val) && val !== null) {
                 transRowHeader.push(Object.entries(val));
               }
             });
             transRow = transRow.map(([key, val], i) => {
-              if (typeof val === "object") {
+              if (typeof val === "object" && !Array.isArray(val) && val !== null) {
                 let RowItem = Object.values(val);
                 RowItem = RowItem.map((v) => {
                   if (typeof v === "object") {
