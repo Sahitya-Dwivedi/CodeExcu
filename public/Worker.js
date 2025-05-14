@@ -943,7 +943,6 @@ self.onmessage = (e) => {
             return transRow;
           }
         };
-        // rows();
         let table = {
           headers: header(),
           rows: rows(),
@@ -961,25 +960,31 @@ self.onmessage = (e) => {
         };
 
         function generateSpaces(obj, sorter = [], value) {
-          let entries = Object.entries(obj);
-          let sortedName;
-          let PreSortedName;
-          let head = header();
+          if (typeof obj === "object" && !Array.isArray(obj)) {
+            let entries = Object.entries(obj);
+            let sortedName;
+            let PreSortedName;
+            let head = header();
 
-          sorter.forEach(([name, val], i) => {
-            if (val === value) {
-              sortedName = name;
-              let k = entries.findIndex(([name, val], i) => name == sortedName);
-              if (i !== 0 && entries[k - 1] !== undefined)
-                PreSortedName = entries[k - 1][0];
-              else PreSortedName = null;
-            }
-          });
+            sorter.forEach(([name, val], i) => {
+              if (val === value) {
+                sortedName = name;
+                let k = entries.findIndex(
+                  ([name, val], i) => name == sortedName
+                );
+                if (i !== 0 && entries[k - 1] !== undefined)
+                  PreSortedName = entries[k - 1][0];
+                else PreSortedName = null;
+              }
+            });
 
-          let i = head.findIndex((val) => val == sortedName);
-          let j = head.findIndex((val) => val == PreSortedName);
-originalConsole.log(i,j)
-          return Array(i - j - 1).fill(null);
+            let i = head.findIndex((val) => val == sortedName);
+            let j = head.findIndex((val) => val == PreSortedName);
+            return Array(i - j - 1).fill(null);
+          } else {
+            originalConsole.log(args);
+            return Array(4).fill(null);
+          }
         }
         function generateTrailingSpaces(value = 1) {
           let spaces = header().length - value;
@@ -1029,11 +1034,10 @@ originalConsole.log(i,j)
 
           if (isObjectOnly(args)) {
             let header = getAllKeys(args);
-            headerCache = [...header]
+            headerCache = [...header];
           } else if (isObjectNested(args)) {
             // Get all nested keys
             let header = getAllKeys(args);
-            originalConsole.log(header);
             headerCache = ["Value", ...header];
           } else {
             headerCache = ["Value"];
@@ -1046,15 +1050,27 @@ originalConsole.log(i,j)
             let transRow = Object.entries(args);
             let transRowHeader = [];
             Object.values(args).forEach((val) => {
-              if (typeof val === "object" && !Array.isArray(val) && val !== null) {
+              if (
+                typeof val === "object" &&
+                !Array.isArray(val) &&
+                val !== null
+              ) {
                 transRowHeader.push(Object.entries(val));
               }
             });
             transRow = transRow.map(([key, val], i) => {
-              if (typeof val === "object" && !Array.isArray(val) && val !== null) {
+              if (
+                typeof val === "object" &&
+                !Array.isArray(val) &&
+                val !== null
+              ) {
                 let RowItem = Object.values(val);
                 RowItem = RowItem.map((v) => {
-                  if (typeof v === "object") {
+                  if (
+                    typeof v === "object" &&
+                    !Array.isArray(v) &&
+                    v !== null
+                  ) {
                     return [
                       ...generateSpaces(val, transRowHeader.flat(1), v),
                       ObjStringification(v),
@@ -1101,6 +1117,78 @@ originalConsole.log(i,j)
                   ...RowItem.flat(1),
                   ...generateTrailingSpaces(RowItem.flat(1).length),
                 ];
+              } else if (Array.isArray(val)) {
+                let RowItem = val.map((v) => {
+                  if (
+                    typeof v === "object" &&
+                    !Array.isArray(v) &&
+                    v !== null
+                  ) {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      ObjStringification(v),
+                    ];
+                  } else if (typeof v === "string") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      `'${v}'`,
+                    ];
+                  } else if (Number.isNaN(v)) {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "NaN",
+                    ];
+                  } else if (typeof v === "boolean") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      v ? "true" : "false",
+                    ];
+                  } else if (v === null) {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "null",
+                    ];
+                  } else if (typeof v === "undefined") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      "undefined",
+                    ];
+                  } else if (typeof v === "function") {
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      `[Function: ${key}]`,
+                    ];
+                  } else {
+                    originalConsole.log(
+                      "val",
+                      val,
+                      "transRowHeader",
+                      transRowHeader.flat(1),
+                    );
+                    originalConsole.log("v", v);
+                    return [
+                      ...generateSpaces(val, transRowHeader.flat(1), v),
+                      v,
+                    ];
+                  }
+                });
+                return [key, ...RowItem, ...generateTrailingSpaces()];
+              } else if (typeof val === "string") {
+                return [key, `'${val}'`, ...generateTrailingSpaces()];
+              } else if (Number.isNaN(val)) {
+                return [key, "NaN", ...generateTrailingSpaces()];
+              } else if (typeof val === "boolean") {
+                return [
+                  key,
+                  val ? "true" : "false",
+                  ...generateTrailingSpaces(),
+                ];
+              } else if (val === null) {
+                return [key, "null", ...generateTrailingSpaces()];
+              } else if (typeof val === "undefined") {
+                return [key, "undefined", ...generateTrailingSpaces()];
+              } else if (typeof val === "function") {
+                return [key, `[Function: ${key}]`, ...generateTrailingSpaces()];
               }
               return [key, val, ...generateTrailingSpaces()];
             });
