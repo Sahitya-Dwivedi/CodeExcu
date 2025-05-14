@@ -1,5 +1,3 @@
-const { headers } = require("next/headers");
-
 self.onmessage = (e) => {
   let outputLog = [];
   let count = {};
@@ -982,8 +980,22 @@ self.onmessage = (e) => {
             let j = head.findIndex((val) => val == PreSortedName);
             return Array(i - j - 1).fill(null);
           } else {
-            originalConsole.log(args);
-            return Array(4).fill(null);
+            originalConsole.log("obj", obj);
+            originalConsole.log("sorter", sorter);
+            originalConsole.log("value", value);
+            let head = header();
+            let SortedName = value;
+            let SortedIndex = obj.findIndex((val) => val == SortedName);
+            let SortedIndexHead = head.findIndex((val) => val == SortedIndex);
+            let PreSortedName = obj[SortedIndex - 1];
+            let PreSortedIndex = obj.findIndex((val) => val == PreSortedName);
+            let PreSortedIndexHead = head.findIndex(
+              (val) => val == PreSortedIndex
+            );
+            originalConsole.log("SortedIndexHead", SortedIndexHead);
+            originalConsole.log("PreSortedIndexHead", PreSortedIndexHead);
+            originalConsole.log(SortedIndexHead - PreSortedIndexHead - 1);
+            return Array(SortedIndexHead - PreSortedIndexHead - 1).fill(null);
           }
         }
         function generateTrailingSpaces(value = 1) {
@@ -1159,20 +1171,10 @@ self.onmessage = (e) => {
                       `[Function: ${key}]`,
                     ];
                   } else {
-                    originalConsole.log(
-                      "val",
-                      val,
-                      "transRowHeader",
-                      transRowHeader.flat(1),
-                    );
-                    originalConsole.log("v", v);
-                    return [
-                      ...generateSpaces(val, transRowHeader.flat(1), v),
-                      v,
-                    ];
+                    return [...generateSpaces(val, [], v), v];
                   }
                 });
-                return [key, ...RowItem, ...generateTrailingSpaces()];
+                return [key, ...RowItem.flat(1), ...generateTrailingSpaces()];
               } else if (typeof val === "string") {
                 return [key, `'${val}'`, ...generateTrailingSpaces()];
               } else if (Number.isNaN(val)) {
