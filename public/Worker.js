@@ -792,17 +792,15 @@ self.onmessage = (e) => {
                 removal.push(parseInt(key));
               }
             }
-            originalConsole.log("args", args);
             let transRow = args.map((arr, i) => {
               if (Array.isArray(arr)) {
-                originalConsole.log("arr", arr);
                 for (let i = 0; i < arr.length; i++) {
                   if (Array.isArray(arr[i])) {
                     replaceHoles(arr[i]);
                   } else if (!(i in arr)) {
                     arr[i] = null;
                   }
-                  if( typeof arr[i] === "object"){
+                  if (typeof arr[i] === "object") {
                     arr[i] = ObjStringification(arr[i]);
                   }
                 }
@@ -1205,21 +1203,21 @@ self.onmessage = (e) => {
             let ent = Object.entries(args);
             ent = ent.map((val, i) => {
               if (typeof val[1] === "object") {
-                return [i, ObjStringification(val[1])];
+                return [val[0], ObjStringification(val[1])];
               } else if (typeof val[1] === "string") {
-                return [i, `'${val[1]}'`];
+                return [val[0], `'${val[1]}'`];
               } else if (Number.isNaN(val[1])) {
-                return [i, "NaN"];
+                return [val[0], "NaN"];
               } else if (typeof val[1] === "boolean") {
-                return [i, val[1] ? "true" : "false"];
+                return [val[0], val[1] ? "true" : "false"];
               } else if (val[1] === null) {
-                return [i, "null"];
+                return [val[0], "null"];
               } else if (typeof val[1] === "undefined") {
-                return [i, "undefined"];
+                return [val[0], "undefined"];
               } else if (typeof val[1] === "function") {
-                return [i, `${`[Function: ${val}]`}`];
+                return [val[0], `${`[Function: ${val[0]}]`}`];
               } else {
-                return [i, val[1]];
+                return [val[0], val[1]];
               }
             });
             return ent;
