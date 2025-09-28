@@ -368,8 +368,6 @@ self.onmessage = (e) => {
     };
 
     const handleTable = (args) => {
-      originalConsole.table(args);
-
       if (!Array.isArray(args) && typeof args !== "object") {
         outputLog.push(handleLog(args));
         return;
@@ -953,7 +951,7 @@ self.onmessage = (e) => {
         let headerCache = null; // Cache for header results
         if (args instanceof Set || args instanceof Map) {
           return outputLog.push({
-            headers: [ "Value"],
+            headers: ["Value"],
             rows: [["size", args.size]],
           });
         }
