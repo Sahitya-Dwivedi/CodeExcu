@@ -8,9 +8,6 @@ const Home = () => {
   const [code, setCode] = useState("");
   const [run, setRun] = useState(false);
   useEffect(() => {
-    alert(
-      "The making is in progress. current functioning can be incomplete also"
-    );
     document.addEventListener("keypress", (e) => {
       if (e.key === "ṇ") {
         setRun(true);
