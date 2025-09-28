@@ -980,9 +980,6 @@ self.onmessage = (e) => {
             let j = head.findIndex((val) => val == PreSortedName);
             return Array(i - j - 1).fill(null);
           } else {
-            originalConsole.log("obj", obj);
-            originalConsole.log("sorter", sorter);
-            originalConsole.log("value", value);
             let head = header();
             let SortedName = value;
             let SortedIndex = obj.findIndex((val) => val == SortedName);
@@ -992,14 +989,13 @@ self.onmessage = (e) => {
             let PreSortedIndexHead = head.findIndex(
               (val) => val == PreSortedIndex
             );
-            originalConsole.log("SortedIndexHead", SortedIndexHead);
-            originalConsole.log("PreSortedIndexHead", PreSortedIndexHead);
-            originalConsole.log(SortedIndexHead - PreSortedIndexHead - 1);
             return Array(SortedIndexHead - PreSortedIndexHead - 1).fill(null);
           }
         }
         function generateTrailingSpaces(value = 1) {
           let spaces = header().length - value;
+          // originalConsole.log("spaces", spaces);
+          // originalConsole.log("header().length", header().length);
           return Array(spaces).fill(null);
         }
 
@@ -1174,25 +1170,29 @@ self.onmessage = (e) => {
                     return [...generateSpaces(val, [], v), v];
                   }
                 });
-                return [key, ...RowItem.flat(1), ...generateTrailingSpaces()];
+                return [
+                  key,
+                  ...RowItem.flat(1),
+                  ...generateTrailingSpaces(RowItem.flat(1).length),
+                ];
               } else if (typeof val === "string") {
-                return [key, `'${val}'`, ...generateTrailingSpaces()];
+                return [key, `'${val}'`, ...generateTrailingSpaces(1)];
               } else if (Number.isNaN(val)) {
-                return [key, "NaN", ...generateTrailingSpaces()];
+                return [key, "NaN", ...generateTrailingSpaces(1)];
               } else if (typeof val === "boolean") {
                 return [
                   key,
                   val ? "true" : "false",
-                  ...generateTrailingSpaces(),
+                  ...generateTrailingSpaces(1),
                 ];
               } else if (val === null) {
-                return [key, "null", ...generateTrailingSpaces()];
+                return [key, "null", ...generateTrailingSpaces(1)];
               } else if (typeof val === "undefined") {
-                return [key, "undefined", ...generateTrailingSpaces()];
+                return [key, "undefined", ...generateTrailingSpaces(1)];
               } else if (typeof val === "function") {
-                return [key, `[Function: ${key}]`, ...generateTrailingSpaces()];
+                return [key, `[Function: ${key}]`, ...generateTrailingSpaces(1)];
               }
-              return [key, val, ...generateTrailingSpaces()];
+              return [key, val, ...generateTrailingSpaces(1)];
             });
             return transRow;
           } else {
