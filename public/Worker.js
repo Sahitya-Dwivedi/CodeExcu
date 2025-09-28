@@ -951,7 +951,12 @@ self.onmessage = (e) => {
         return outputLog.push(table);
       } else if (typeof args === "object") {
         let headerCache = null; // Cache for header results
-
+        if (args instanceof Set || args instanceof Map) {
+          return outputLog.push({
+            headers: [ "Value"],
+            rows: [["size", args.size]],
+          });
+        }
         isObjectOnly = (args) => {
           return Object.values(args).every((val) => typeof val === "object");
         };
