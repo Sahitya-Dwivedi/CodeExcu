@@ -792,18 +792,22 @@ self.onmessage = (e) => {
                 removal.push(parseInt(key));
               }
             }
-
+            originalConsole.log("args", args);
             let transRow = args.map((arr, i) => {
               if (Array.isArray(arr)) {
+                originalConsole.log("arr", arr);
                 for (let i = 0; i < arr.length; i++) {
                   if (Array.isArray(arr[i])) {
                     replaceHoles(arr[i]);
                   } else if (!(i in arr)) {
                     arr[i] = null;
                   }
+                  if( typeof arr[i] === "object"){
+                    arr[i] = ObjStringification(arr[i]);
+                  }
                 }
                 arr = arr.filter((_, i) => !removal.includes(i));
-
+                // return [9,1,2]
                 return [i, ...arr, ...generateSpaces(arr.length)];
               } else {
                 return [i, ...generateSpaces(), arr];
@@ -994,8 +998,6 @@ self.onmessage = (e) => {
         }
         function generateTrailingSpaces(value = 1) {
           let spaces = header().length - value;
-          // originalConsole.log("spaces", spaces);
-          // originalConsole.log("header().length", header().length);
           return Array(spaces).fill(null);
         }
 
@@ -1190,7 +1192,11 @@ self.onmessage = (e) => {
               } else if (typeof val === "undefined") {
                 return [key, "undefined", ...generateTrailingSpaces(1)];
               } else if (typeof val === "function") {
-                return [key, `[Function: ${key}]`, ...generateTrailingSpaces(1)];
+                return [
+                  key,
+                  `[Function: ${key}]`,
+                  ...generateTrailingSpaces(1),
+                ];
               }
               return [key, val, ...generateTrailingSpaces(1)];
             });
