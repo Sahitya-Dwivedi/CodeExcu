@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { Editor } from "@monaco-editor/react";
 const CodeEditor = ({ data }) => {
   const editor = useRef(null);
-  const [value, setValue] = useState(`// Your JavaScript code here`);
+  const [value, setValue] =
+    useState(`// ⚠️ Execution Notice\n// Some advanced or unusual JavaScript features may not be fully supported in this environment. Certain edge cases or constructs could have been executed incorrectly.\n// For your safety and security, please avoid running this code outside trusted environments.\n// If you need to verify results, use official tools and follow safe coding practices.
+    `);
   const [width, setWidth] = useState(false);
   const handleEditorChange = (editorRef) => {
     editor.current = editorRef;
