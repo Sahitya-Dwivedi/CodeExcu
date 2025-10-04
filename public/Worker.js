@@ -1299,6 +1299,50 @@ self.onmessage = (e) => {
     console.trace = originalConsole.trace;
   };
 
+  // Timer polyfill: queue callbacks and run them synchronously after eval
+  const originalSetTimeout = self.setTimeout;
+  const originalSetInterval = self.setInterval;
+  const originalClearTimeout = self.clearTimeout;
+  const originalClearInterval = self.clearInterval;
+
+  let __timerId = 0;
+  const __timeoutQueue = [];
+  const __intervalMap = new Map();
+
+  self.setTimeout = (fn, delay = 0, ...args) => {
+    const id = ++__timerId;
+    __timeoutQueue.push({ id, delay: Number(delay) || 0, fn, args });
+    return id;
+  };
+  self.clearTimeout = (id) => {
+    const idx = __timeoutQueue.findIndex((t) => t.id === id);
+    if (idx !== -1) __timeoutQueue.splice(idx, 1);
+  };
+
+  self.setInterval = (fn, delay = 0, ...args) => {
+    const id = ++__timerId;
+    __intervalMap.set(id, { fn, delay: Number(delay) || 0, args });
+    // This environment has no event loop; execute one tick after its delay.
+    __timeoutQueue.push({
+      id: `__interval_once_${id}`,
+      delay: Number(delay) || 0,
+      fn: () => {
+        if (__intervalMap.has(id)) {
+          try {
+            fn(...args);
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      },
+      args: [],
+    });
+    return id;
+  };
+  self.clearInterval = (id) => {
+    __intervalMap.delete(id);
+  };
+
   // Evaluate code
   const evaluateCode = () => {
     try {
@@ -1313,7 +1357,44 @@ self.onmessage = (e) => {
   // Execute evaluation
   overwriteConsole();
   evaluateCode();
+
+  // Run queued timers synchronously (single-tick), preserving relative delay order
+  if (__timeoutQueue.length) {
+    __timeoutQueue.sort((a, b) => a.delay - b.delay);
+    const start = performance.now();
+    for (const task of __timeoutQueue) {
+      const target = start + (task.delay || 0);
+      // Busy-wait to preserve ordering; no real async in this runner
+      while (performance.now() < target) {
+        /* noop */
+      }
+      try {
+        if (typeof task.fn === "function") {
+          // task.fn(...task.args);
+        } else if (typeof task.fn === "string") {
+          // Optional: support string callbacks like native setTimeout
+          try {
+            eval(task.fn);
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    __timeoutQueue.length = 0;
+  }
+
+  // Restore original timers
+  self.setTimeout = originalSetTimeout;
+  self.setInterval = originalSetInterval;
+  self.clearTimeout = originalClearTimeout;
+  self.clearInterval = originalClearInterval;
+
   restoreConsole();
   // Set output log
+  console.log(outputLog);
+  // Send output log back to main thread
   self.postMessage(outputLog);
 };
