@@ -6,6 +6,8 @@ import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 
 const Excutor = ({ toRun, ChangeRun }) => {
   const [value, setValue] = useState([]);
+  const [outputLog, setOutputLog] = useState([]);
+  const [timeoutDelay, setTimeoutDelay] = useState(0);
   const [showOption, setShowOption] = useState(false);
 
   useEffect(() => {
@@ -15,7 +17,6 @@ const Excutor = ({ toRun, ChangeRun }) => {
       }
     });
   }, []);
-  
 
   const handleEval = useCallback(() => {
     let outputLog = [];
@@ -23,7 +24,8 @@ const Excutor = ({ toRun, ChangeRun }) => {
     let code = localStorage.getItem("code");
     worker.postMessage(code);
     worker.onmessage = (e) => {
-      e.data.map((val, i) => {
+      console.log(e.data);
+      e.data.outputLog.map((val, i) => {
         if (typeof val === "object") {
           const table = (
             <table key={uuidv4()}>
@@ -54,7 +56,8 @@ const Excutor = ({ toRun, ChangeRun }) => {
           outputLog.push(val);
         }
       });
-      setValue(outputLog);
+      setTimeoutDelay(e.data.timeoutDelay);
+      setOutputLog(outputLog);
     };
   }, []);
 
@@ -64,6 +67,13 @@ const Excutor = ({ toRun, ChangeRun }) => {
       ChangeRun(false);
     }
   }, [ChangeRun, handleEval, toRun]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setValue(outputLog);
+    }, timeoutDelay);
+  }, [outputLog, timeoutDelay]);
+
   return (
     <div className="overflow-hidden bg-black sm:rounded-xl sm:mx-2 sm:mb-1">
       <div className="terminal h-[45vh] sm:h-[90vh] w-screen sm:w-[48vw] overflow-y-auto">
