@@ -2,7 +2,8 @@ self.onmessage = (e) => {
   let outputLog = [];
   let count = {};
   let timeCalc = {};
-  // Save original console methods
+  let timeoutDelay = [];
+  // Save original console and setmethods
   const originalConsole = {
     log: console.log,
     error: console.error,
@@ -28,6 +29,11 @@ self.onmessage = (e) => {
     // profileEnd: console.profileEnd, // Not supported in this site
     // exception: console.exception, // deprecated
     // memory: console.memory, // Shows memory stats in environments like Chrome
+  };
+  const originalSet = {
+    originalSetTimeout: setTimeout,
+    setInterval: setInterval,
+    // setImmediate: setImmediate,
   };
 
   // Overwrite console methods
@@ -347,7 +353,7 @@ self.onmessage = (e) => {
           const lastEvalIndex = evalIndices[evalIndices.length - 2];
           stackLines[lastEvalIndex] = stackLines[lastEvalIndex].replace(
             "eval",
-            "(anonymous)"
+            "(anonymous)",
           );
         }
 
@@ -472,7 +478,7 @@ self.onmessage = (e) => {
             return `{${key
               .map(
                 (k, i) =>
-                  `${k}: ${typeof val[i] == "object" ? "[Object]" : val[i]}`
+                  `${k}: ${typeof val[i] == "object" ? "[Object]" : val[i]}`,
               )
               .join(", ")}}`;
           } else if (key.length == 0) {
@@ -575,8 +581,8 @@ self.onmessage = (e) => {
           } else if (is2DArray(HeaderArgs)) {
             let maxLength = Math.max(
               ...HeaderArgs.map((arr) => arr.length).filter(
-                (length) => !isNaN(length)
-              )
+                (length) => !isNaN(length),
+              ),
             );
 
             // Counting the number of arrays in the header
@@ -620,15 +626,15 @@ self.onmessage = (e) => {
             }
 
             headerCache = Array.from({ length: maxLength }, (_, i) => i).filter(
-              (val) => !removal.includes(val)
+              (val) => !removal.includes(val),
             );
           } else if (isObjectArray(HeaderArgs)) {
             headerCache = getUniqueObjectKeys(HeaderArgs);
           } else if (isObjectNestedArray(HeaderArgs)) {
             let maxLength = Math.max(
               ...HeaderArgs.map((arr) =>
-                Array.isArray(arr) ? arr.length : 0
-              ).filter((length) => !isNaN(length))
+                Array.isArray(arr) ? arr.length : 0,
+              ).filter((length) => !isNaN(length)),
             );
             // Counting the number of arrays in the header
             let OnlyArr = HeaderArgs.filter((arr) => Array.isArray(arr));
@@ -672,7 +678,7 @@ self.onmessage = (e) => {
 
             let transHeader = Array.from(
               { length: maxLength },
-              (_, i) => i
+              (_, i) => i,
             ).filter((val) => !removal.includes(val));
 
             headerCache = [
@@ -683,8 +689,8 @@ self.onmessage = (e) => {
           } else if (isNestedArray(HeaderArgs)) {
             let maxLength = Math.max(
               ...HeaderArgs.map((arr) =>
-                Array.isArray(arr) ? arr.length : 0
-              ).filter((length) => !isNaN(length))
+                Array.isArray(arr) ? arr.length : 0,
+              ).filter((length) => !isNaN(length)),
             );
             // Counting the number of arrays in the header
             let OnlyArr = HeaderArgs.filter((arr) => Array.isArray(arr));
@@ -728,7 +734,7 @@ self.onmessage = (e) => {
 
             let transHeader = Array.from(
               { length: maxLength },
-              (_, i) => i
+              (_, i) => i,
             ).filter((val) => !removal.includes(val));
 
             headerCache = [...transHeader, "Values"];
@@ -747,7 +753,7 @@ self.onmessage = (e) => {
             let maxLength = Math.max(
               ...args
                 .map((arr) => arr.length)
-                .filter((length) => !isNaN(length))
+                .filter((length) => !isNaN(length)),
             );
             args = InDepthStringification(args);
             args = handleUndefinedAndNull(args);
@@ -973,7 +979,7 @@ self.onmessage = (e) => {
               if (val === value) {
                 sortedName = name;
                 let k = entries.findIndex(
-                  ([name, val], i) => name == sortedName
+                  ([name, val], i) => name == sortedName,
                 );
                 if (i !== 0 && entries[k - 1] !== undefined)
                   PreSortedName = entries[k - 1][0];
@@ -992,7 +998,7 @@ self.onmessage = (e) => {
             let PreSortedName = obj[SortedIndex - 1];
             let PreSortedIndex = obj.findIndex((val) => val == PreSortedName);
             let PreSortedIndexHead = head.findIndex(
-              (val) => val == PreSortedIndex
+              (val) => val == PreSortedIndex,
             );
             return Array(SortedIndexHead - PreSortedIndexHead - 1).fill(null);
           }
@@ -1015,7 +1021,7 @@ self.onmessage = (e) => {
             return `{${key
               .map(
                 (k, i) =>
-                  `${k}: ${typeof val[i] == "object" ? "[Object]" : val[i]}`
+                  `${k}: ${typeof val[i] == "object" ? "[Object]" : val[i]}`,
               )
               .join(", ")}}`;
           } else if (key.length == 0) {
@@ -1275,6 +1281,12 @@ self.onmessage = (e) => {
     console.trace = (...args) =>
       outputLog.push(`${grpIndent}${handleTrace(...args)}`);
   };
+  const overwriteSet = () => {
+    setTimeout = (fn, delay) => {
+      timeoutDelay.push(delay);
+      return fn();
+    }
+  };
 
   // Restore original console methods
   const restoreConsole = () => {
@@ -1298,11 +1310,16 @@ self.onmessage = (e) => {
     console.groupCollapsed = originalConsole.groupCollapsed;
     console.trace = originalConsole.trace;
   };
+  const restoreSet = () => {
+    setTimeout = originalSet.originalSetTimeout;
+  }
 
   // Evaluate code
   const evaluateCode = () => {
     try {
-      eval(e.data);
+      // setTimeout(() => {
+        eval(e.data);
+      // }, timeoutDelay | 0);
     } catch (error) {
       originalConsole.error(error);
       originalConsole.trace(error);
@@ -1311,9 +1328,11 @@ self.onmessage = (e) => {
   };
 
   // Execute evaluation
+  overwriteSet();
   overwriteConsole();
   evaluateCode();
+  restoreSet();
   restoreConsole();
   // Set output log
-  self.postMessage(outputLog);
+  self.postMessage({ outputLog, timeoutDelay });
 };
