@@ -1,8 +1,13 @@
 self.onmessage = (e) => {
+  console.log(e.data);
   let outputLog = [];
   let count = {};
   let timeCalc = {};
   let timeoutDelay = [];
+  const pushOutputLog = (value, delay = 0) => {
+    timeoutDelay.push(delay);
+    return outputLog.push(value);
+  };
   // Save original console and setmethods
   const originalConsole = {
     log: console.log,
@@ -375,7 +380,7 @@ self.onmessage = (e) => {
 
     const handleTable = (args) => {
       if (!Array.isArray(args) && typeof args !== "object") {
-        outputLog.push(handleLog(args));
+        pushOutputLog(handleLog(args));
         return;
       }
 
@@ -952,11 +957,11 @@ self.onmessage = (e) => {
           rows: rows(),
         };
         headerCache = null; // Reset cache after table is generated
-        return outputLog.push(table);
+        return pushOutputLog(table);
       } else if (typeof args === "object") {
         let headerCache = null; // Cache for header results
         if (args instanceof Set || args instanceof Map) {
-          return outputLog.push({
+          return pushOutputLog({
             headers: ["Value"],
             rows: [["size", args.size]],
           });
@@ -1237,55 +1242,54 @@ self.onmessage = (e) => {
           headers: header(),
           rows: rows(),
         };
-        return outputLog.push(table);
+        return pushOutputLog(table);
       }
     };
 
     console.log = (...args) =>
-      outputLog.push(`${grpIndent}${handleLog(...args)}`);
+      pushOutputLog(`${grpIndent}${handleLog(...args)}`);
     console.error = (...args) =>
-      outputLog.push(`${grpIndent}${handleError(...args)}`);
+      pushOutputLog(`${grpIndent}${handleError(...args)}`);
     console.warn = (...args) =>
-      outputLog.push(`${grpIndent}${handleWarn(...args)}`);
+      pushOutputLog(`${grpIndent}${handleWarn(...args)}`);
     console.info = (...args) =>
-      outputLog.push(`${grpIndent}${handleInfo(...args)}`);
+      pushOutputLog(`${grpIndent}${handleInfo(...args)}`);
     console.debug = (...args) =>
-      outputLog.push(`${grpIndent}${handleDebug(...args)}`);
+      pushOutputLog(`${grpIndent}${handleDebug(...args)}`);
     console.table = (args) => handleTable(args);
     console.assert = (condition, ...args) =>
-      outputLog.push(`${grpIndent}${handleAssert(condition, ...args)}`);
-    console.clear = () => outputLog.push(`${grpIndent}${handleClear()}`);
+      pushOutputLog(`${grpIndent}${handleAssert(condition, ...args)}`);
+    console.clear = () => pushOutputLog(`${grpIndent}${handleClear()}`);
     console.count = (label) =>
-      outputLog.push(`${grpIndent}${handleCount(label)}`);
+      pushOutputLog(`${grpIndent}${handleCount(label)}`);
     console.countReset = (label) =>
-      outputLog.push(`${grpIndent}${handleCountReset(label)}`);
-    console.time = (label) =>
-      outputLog.push(`${grpIndent}${handleTime(label)}`);
+      pushOutputLog(`${grpIndent}${handleCountReset(label)}`);
+    console.time = (label) => pushOutputLog(`${grpIndent}${handleTime(label)}`);
     console.timeEnd = (label) =>
-      outputLog.push(`${grpIndent}${handleTimeEnd(label)}`);
+      pushOutputLog(`${grpIndent}${handleTimeEnd(label)}`);
     console.timeLog = (label) =>
-      outputLog.push(`${grpIndent}${handleTimeLog(label)}`);
+      pushOutputLog(`${grpIndent}${handleTimeLog(label)}`);
     console.dir = (args, options) =>
-      outputLog.push(`${grpIndent}${handleDir(args, options)}`);
+      pushOutputLog(`${grpIndent}${handleDir(args, options)}`);
     console.dirxml = (...args) =>
-      outputLog.push(`${grpIndent}${handleLog(...args)}`);
+      pushOutputLog(`${grpIndent}${handleLog(...args)}`);
     console.group = (...args) => {
       grpType = "console.group";
-      outputLog.push(`${grpIndent}${handleGroup(...args)}`);
+      pushOutputLog(`${grpIndent}${handleGroup(...args)}`);
     };
     console.groupEnd = () => handleGroupEnd();
     console.groupCollapsed = (...args) => {
       grpType = "console.groupCollapsed";
-      outputLog.push(`${grpIndent}${handleGroup(...args)}`);
+      pushOutputLog(`${grpIndent}${handleGroup(...args)}`);
     };
     console.trace = (...args) =>
-      outputLog.push(`${grpIndent}${handleTrace(...args)}`);
+      pushOutputLog(`${grpIndent}${handleTrace(...args)}`);
   };
   const overwriteSet = () => {
-    setTimeout = (fn, delay) => {
+    setTimeout = (fn, delay, ...args) => {
       timeoutDelay.push(delay);
-      return fn();
-    }
+      
+    };
   };
 
   // Restore original console methods
@@ -1312,25 +1316,23 @@ self.onmessage = (e) => {
   };
   const restoreSet = () => {
     setTimeout = originalSet.originalSetTimeout;
-  }
+  };
 
   // Evaluate code
-  const evaluateCode = () => {
+  const evaluateCode = (data) => {
     try {
-      // setTimeout(() => {
-        eval(e.data);
-      // }, timeoutDelay | 0);
+      eval(data);
     } catch (error) {
       originalConsole.error(error);
       originalConsole.trace(error);
-      outputLog.push(`${error}`);
+      pushOutputLog(`${error}`);
     }
   };
 
   // Execute evaluation
-  overwriteSet();
   overwriteConsole();
-  evaluateCode();
+  overwriteSet();
+  evaluateCode(e.data);
   restoreSet();
   restoreConsole();
   // Set output log

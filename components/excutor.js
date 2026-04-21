@@ -24,7 +24,7 @@ const Excutor = ({ toRun, ChangeRun }) => {
     let code = localStorage.getItem("code");
     worker.postMessage(code);
     worker.onmessage = (e) => {
-      console.log(e.data);
+      // console.log(e.data);
       e.data.outputLog.map((val, i) => {
         if (typeof val === "object") {
           const table = (
