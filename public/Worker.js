@@ -1,13 +1,8 @@
 self.onmessage = (e) => {
-  let outputLog = [];
   let count = {};
   let timeCalc = {};
   const pushOutputLog = (value) => {
-    // outputLog.push(value)
-    // setTimeout(() => {
     self.postMessage({ outputLog:[value] });
-    // }, 100);
-    // outputLog.pop()
   };
   // Save original console and setmethods
   const originalConsole = {
@@ -36,7 +31,6 @@ self.onmessage = (e) => {
     // exception: console.exception, // deprecated
     // memory: console.memory, // Shows memory stats in environments like Chrome
   };
-
   // Overwrite console methods
   const overwriteConsole = () => {
     const formatObject = (obj) => {
@@ -1316,8 +1310,7 @@ self.onmessage = (e) => {
 
   // Execute evaluation
   overwriteConsole();
+  console.log("e.data",typeof e.data);
   evaluateCode(e.data);
-  restoreConsole();
-  // Set output log
-  // self.postMessage({ outputLog });
+  // restoreConsole(); // It is no longer use to restore the original console methods after evaluation, as we want to keep the overwritten methods active for the duration of the worker's lifecycle.
 };
