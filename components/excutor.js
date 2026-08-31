@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { FaTrash } from "react-icons/fa";
 import { LuLayoutPanelLeft } from "react-icons/lu";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 
-const Excutor = ({ toRun, ChangeRun }) => {
+const Excutor = ({ toRun, ChangeRun, toStop, ChangeStop }) => {
   const [value, setValue] = useState([]);
   const [outputLog, setOutputLog] = useState([]);
   const [timeoutDelay, setTimeoutDelay] = useState(0);
   const [showOption, setShowOption] = useState(false);
+  const worker = useRef(null);
 
   useEffect(() => {
     document.addEventListener("keypress", (e) => {
@@ -18,61 +19,86 @@ const Excutor = ({ toRun, ChangeRun }) => {
     });
   }, []);
 
-  const handleEval = useCallback(() => {
+  const handleEval = useCallback((stop) => {
+    if (stop) {
+      alert("Execution Stopped");
+      worker.current?.terminate();
+      worker.current = null;
+      alert("Execution Stopped");
+      console.log("Execution Stopped");
+      return;
+    }
     let outputLog = [];
-    let worker = new Worker(new URL("../public/Worker.js", import.meta.url));
+    worker.current = new Worker(
+      new URL("../public/Worker.js", import.meta.url),
+    );
     let code = localStorage.getItem("code");
-    worker.postMessage(code);
-    worker.onmessage = (e) => {
+    worker.current.postMessage(code);
+    worker.current.onmessage = (e) => {
       // console.log(e.data);
       e.data.outputLog.map((val, i) => {
+        console.log(val);
         if (typeof val === "object") {
-          const table = (
-            <table key={uuidv4()}>
+          const headersHtml = Array.isArray(val.headers)
+            ? val.headers.map((header) => `<th>${header}</th>`).join("")
+            : "";
+
+          const rowsHtml = Array.isArray(val.rows)
+            ? val.rows
+                .map((row) => {
+                  if (!Array.isArray(row)) return "";
+                  const cells = row.map((cell) => `<td>${cell}</td>`).join("");
+                  return `<tr>${cells}</tr>`;
+                })
+                .join("")
+            : "";
+
+          const table = `
+            <table>
               <thead>
                 <tr>
                   <th>(Index)</th>
-                  {val.headers.map((val) => {
-                    return <th key={uuidv4()}>{val}</th>;
-                  })}
+                  ${headersHtml}
                 </tr>
               </thead>
               <tbody>
-                {val.rows.map((val) => {
-                  return (
-                    <tr key={uuidv4()}>
-                      {Array.isArray(val) &&
-                        val.map((subval) => {
-                          return <td key={uuidv4()}>{subval}</td>;
-                        })}
-                    </tr>
-                  );
-                })}
+                ${rowsHtml}
               </tbody>
             </table>
-          );
+          `;
+
           outputLog.push(table);
+          console.log(table);
+          document.querySelector(".content").innerHTML += table;
         } else {
           outputLog.push(val);
+          document.querySelector(".content").innerHTML +=
+            "<div>" + val + "</div>";
         }
       });
-      setTimeoutDelay(e.data.timeoutDelay);
+      // setTimeoutDelay(e.data.timeoutDelay);
       setOutputLog(outputLog);
+      // document.querySelector(".content").innerHTML = "<div>" + outputLog.join("</div><div>") + "</div>";
     };
   }, []);
 
   useEffect(() => {
     if (toRun) {
-      handleEval();
+      handleEval(false);
       ChangeRun(false);
     }
   }, [ChangeRun, handleEval, toRun]);
 
   useEffect(() => {
-    setTimeout(() => {
-      setValue(outputLog);
-    }, timeoutDelay);
-  }, [outputLog, timeoutDelay]);
+    setValue([...outputLog]);
+  }, [outputLog]);
+
+  useEffect(() => {
+    if (toStop) {
+      handleEval(true);
+      ChangeStop(false);
+    }
+  }, [toStop, handleEval, ChangeStop]);
 
   return (
     <div className="overflow-hidden bg-black sm:rounded-xl sm:mx-2 sm:mb-1">
@@ -105,15 +131,17 @@ const Excutor = ({ toRun, ChangeRun }) => {
           )}
         </div> */}
         </div>
-        <div className="terminalData mx-4">
-          {value.map((val) => (
-            <div
-              key={uuidv4()}
-              className="whitespace-pre py-1 my-1 tracking-widest text-wrap"
-            >
-              {val}
-            </div>
-          ))}
+        <div className="terminalData mx-4 content">
+          {
+            // value.map((val, index) => (
+            //   <div
+            //     key={index}
+            //     className="whitespace-pre py-1 my-1 tracking-widest text-wrap"
+            //   >
+            //     {/* {val} */}
+            //   </div>
+            // ))
+          }
         </div>
       </div>
     </div>
