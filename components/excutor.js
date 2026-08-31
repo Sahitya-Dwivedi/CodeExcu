@@ -5,17 +5,13 @@ import { LuLayoutPanelLeft } from "react-icons/lu";
 import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
 
 const Excutor = ({ toRun, ChangeRun, toStop, ChangeStop }) => {
-  const [value, setValue] = useState([]);
-  const [outputLog, setOutputLog] = useState([]);
-  const [timeoutDelay, setTimeoutDelay] = useState(0);
-  const [showOption, setShowOption] = useState(false);
   const worker = useRef(null);
 
   useEffect(() => {
     document.addEventListener("keypress", (e) => {
       if (e.key === "ḍ") {
-        setValue([]);
-      }
+        document.querySelector(".content").innerHTML = "";
+      }``
     });
   }, []);
 
@@ -35,7 +31,7 @@ const Excutor = ({ toRun, ChangeRun, toStop, ChangeStop }) => {
     let code = localStorage.getItem("code");
     worker.current.postMessage(code);
     worker.current.onmessage = (e) => {
-      // console.log(e.data);
+      console.log(e);
       e.data.outputLog.map((val, i) => {
         console.log(val);
         if (typeof val === "object") {
@@ -76,8 +72,6 @@ const Excutor = ({ toRun, ChangeRun, toStop, ChangeStop }) => {
             "<div>" + val + "</div>";
         }
       });
-      // setTimeoutDelay(e.data.timeoutDelay);
-      setOutputLog(outputLog);
       // document.querySelector(".content").innerHTML = "<div>" + outputLog.join("</div><div>") + "</div>";
     };
   }, []);
@@ -88,10 +82,6 @@ const Excutor = ({ toRun, ChangeRun, toStop, ChangeStop }) => {
       ChangeRun(false);
     }
   }, [ChangeRun, handleEval, toRun]);
-
-  useEffect(() => {
-    setValue([...outputLog]);
-  }, [outputLog]);
 
   useEffect(() => {
     if (toStop) {
@@ -105,7 +95,7 @@ const Excutor = ({ toRun, ChangeRun, toStop, ChangeStop }) => {
       <div className="terminal h-[45vh] sm:h-[90vh] w-screen sm:w-[48vw] overflow-y-auto">
         <div className="flex items-end absolute  right-2">
           <button
-            onClick={() => setValue([])}
+            onClick={() => document.querySelector(".content").innerHTML = ""}
             className="clear_terminal text-blue-400 text-xl border-2 border-blue-400 rounded-md p-1 m-2  hover:text-black hover:bg-blue-400 transition-all duration-500 ease-in-out h-fit"
             name="clear"
             title="Clear Terminal"
