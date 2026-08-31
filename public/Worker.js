@@ -1,12 +1,13 @@
 self.onmessage = (e) => {
-  console.log(e.data);
   let outputLog = [];
   let count = {};
   let timeCalc = {};
-  let timeoutDelay = [];
-  const pushOutputLog = (value, delay = 0) => {
-    timeoutDelay.push(delay);
-    return outputLog.push(value);
+  const pushOutputLog = (value) => {
+    // outputLog.push(value)
+    // setTimeout(() => {
+    self.postMessage({ outputLog:[value] });
+    // }, 100);
+    // outputLog.pop()
   };
   // Save original console and setmethods
   const originalConsole = {
@@ -34,11 +35,6 @@ self.onmessage = (e) => {
     // profileEnd: console.profileEnd, // Not supported in this site
     // exception: console.exception, // deprecated
     // memory: console.memory, // Shows memory stats in environments like Chrome
-  };
-  const originalSet = {
-    originalSetTimeout: setTimeout,
-    setInterval: setInterval,
-    // setImmediate: setImmediate,
   };
 
   // Overwrite console methods
@@ -1285,13 +1281,6 @@ self.onmessage = (e) => {
     console.trace = (...args) =>
       pushOutputLog(`${grpIndent}${handleTrace(...args)}`);
   };
-  const overwriteSet = () => {
-    setTimeout = (fn, delay, ...args) => {
-      timeoutDelay.push(delay);
-      
-    };
-  };
-
   // Restore original console methods
   const restoreConsole = () => {
     console.log = originalConsole.log;
@@ -1314,10 +1303,6 @@ self.onmessage = (e) => {
     console.groupCollapsed = originalConsole.groupCollapsed;
     console.trace = originalConsole.trace;
   };
-  const restoreSet = () => {
-    setTimeout = originalSet.originalSetTimeout;
-  };
-
   // Evaluate code
   const evaluateCode = (data) => {
     try {
@@ -1331,10 +1316,8 @@ self.onmessage = (e) => {
 
   // Execute evaluation
   overwriteConsole();
-  overwriteSet();
   evaluateCode(e.data);
-  restoreSet();
   restoreConsole();
   // Set output log
-  self.postMessage({ outputLog, timeoutDelay });
+  // self.postMessage({ outputLog });
 };
