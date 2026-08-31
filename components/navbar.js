@@ -1,7 +1,7 @@
 import React from "react";
 import { FaPlay } from "react-icons/fa";
 
-const Navbar = ({ letRun }) => {
+const Navbar = ({ letRun, letStop }) => {
   return (
     <nav className="w-screen h-[5vh] sm:h-[10vh]  rounded-lg relative flex justify-between items-center">
       <div className="text-3xl font-bold font-serif m-2 p-2 flex items-center sm:gap-2">
@@ -17,7 +17,16 @@ const Navbar = ({ letRun }) => {
           title="click to run the code"
         >
           {/* <FaPlay /> */}
-          run
+          Run
+        </button>
+         <button
+          onClick={() => letStop(true)}
+          className="bg-yellow-500  px-2 text-xl rounded-md mx-4 mt-1"
+          name="stop"
+          title="click to stop the code"
+        >
+          {/* <FaPlay /> */}
+          Stop
         </button>
       </h1>
     </nav>
