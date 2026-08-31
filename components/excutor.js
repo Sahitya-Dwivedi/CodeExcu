@@ -24,6 +24,7 @@ const Excutor = ({ toRun, ChangeRun, toStop, ChangeStop }) => {
       console.log("Execution Stopped");
       return;
     }
+    document.querySelector(".content").innerHTML = "";
     let outputLog = [];
     worker.current = new Worker(
       new URL("../public/Worker.js", import.meta.url),
